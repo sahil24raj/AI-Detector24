@@ -13,13 +13,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { imageBase64, mimeType, cropData } = req.body;
+    const { imageBase64, mimeType, cropData, location } = req.body;
 
     if (!imageBase64 || !mimeType || !cropData) {
       return res.status(400).json({ error: 'imageBase64, mimeType, and cropData are required' });
     }
 
     const prompt = `You are an advanced Agri-AI assistant. Based on this crop image and the confirmed details below, generate a detailed full report.
+${location ? `The user is located at or near: ${location}. Suggest localized actionable solutions such as localized gharelu nuske (home remedies) that rely on locally available materials in that region.` : ''}
 
 Confirmed Details:
 - Crop Type: ${cropData.crop_type}

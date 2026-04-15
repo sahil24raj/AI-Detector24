@@ -13,13 +13,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { imageBase64, mimeType } = req.body;
+    const { imageBase64, mimeType, location } = req.body;
 
     if (!imageBase64 || !mimeType) {
       return res.status(400).json({ error: 'imageBase64 and mimeType are required' });
     }
 
     const prompt = `You are an advanced Agri-AI assistant. Analyze this crop image carefully.
+${location ? `The user is located at or near: ${location}. Take this local climate, common soil, and geography into account.` : ''}
 Detect and predict:
 1. Crop Type (e.g., wheat, rice, maize, tomato, etc.)
 2. Soil Type (e.g., sandy, clay, loamy, black soil, etc.)

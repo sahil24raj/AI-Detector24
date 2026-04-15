@@ -72,6 +72,8 @@ export default function App() {
   const [editedCrop, setEditedCrop] = useState<CropAnalysis | null>(null);
   const [report, setReport] = useState<FullReport | null>(null);
   const [editMode, setEditMode] = useState(false);
+  const [locationName, setLocationName] = useState<string>('');
+  const [isLocating, setIsLocating] = useState<boolean>(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   function showToast(msg: string, error = false) {
@@ -98,6 +100,32 @@ export default function App() {
     setImagePreview(URL.createObjectURL(file));
     const b64 = await fileToBase64(file);
     setImageBase64(b64);
+
+    if (navigator.geolocation) {
+      setIsLocating(true);
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const { latitude, longitude } = position.coords;
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+            const data = await res.json();
+            if (data && data.address) {
+               const addr = data.address;
+               const shortLoc = [addr.village || addr.town || addr.city, addr.state, addr.country].filter(Boolean).join(', ');
+               setLocationName(shortLoc || data.display_name);
+            }
+          } catch (e) {
+            console.error("Geocoding failed", e);
+          } finally {
+             setIsLocating(false);
+          }
+        },
+        (error) => {
+          console.error("Geolocation error", error);
+          setIsLocating(false);
+        }
+      );
+    }
   }, []);
 
   const onDrop = useCallback((e: React.DragEvent) => {
@@ -112,7 +140,7 @@ export default function App() {
     setLoading(true);
     setLoadingMsg('🔍 Analyzing crop image with AI...');
     try {
-      const result = await analyzeImage(imageBase64, imageMime);
+      const result = await analyzeImage(imageBase64, imageMime, locationName);
       setCropData(result);
       setEditedCrop({ ...result });
       setStep('verifying');
@@ -128,7 +156,7 @@ export default function App() {
     setLoading(true);
     setLoadingMsg('🌱 Generating full crop health report...');
     try {
-      const full = await generateFullReport(imageBase64, imageMime, confirmed);
+      const full = await generateFullReport(imageBase64, imageMime, confirmed, locationName);
       setReport(full);
       setStep('results');
     } catch (e: unknown) {
@@ -147,6 +175,8 @@ export default function App() {
     setEditedCrop(null);
     setReport(null);
     setEditMode(false);
+    setLocationName('');
+    setIsLocating(false);
   }
 
   function getStepIndex() {
@@ -208,6 +238,16 @@ export default function App() {
                 <div style={{ textAlign: 'center', marginTop: '0.5rem', fontSize: '0.78rem', color: 'var(--text-dim)' }}>
                   {imageFile?.name} · {(imageFile!.size / 1024).toFixed(0)} KB
                 </div>
+                {locationName && (
+                  <div style={{ textAlign: 'center', marginTop: '0.25rem', fontSize: '0.85rem', color: 'var(--text-dim)' }}>
+                    📍 Location: {locationName}
+                  </div>
+                )}
+                {isLocating && (
+                  <div style={{ textAlign: 'center', marginTop: '0.25rem', fontSize: '0.85rem', color: 'var(--text-dim)' }}>
+                    📍 Detecting location...
+                  </div>
+                )}
               </div>
             )}
 
