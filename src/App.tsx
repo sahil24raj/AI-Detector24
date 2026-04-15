@@ -1,0 +1,416 @@
+import { useState, useRef, useCallback } from 'react';
+import './index.css';
+import { analyzeImage, generateFullReport } from './geminiService';
+import type { AppStep, CropAnalysis, FullReport } from './types';
+
+// ─── Score Ring Component ──────────────────
+
+function ScoreRing({ value, label, name, color, inverted = false }: {
+  value: number; label?: string; name: string; color: string; inverted?: boolean;
+}) {
+  const r = 30;
+  const circ = 2 * Math.PI * r;
+  const raw = inverted ? 100 - value : value;
+  const offset = circ - (raw / 100) * circ;
+  const textColor = inverted
+    ? value > 60 ? '#ef4444' : value > 30 ? '#f59e0b' : '#22c55e'
+    : value > 60 ? '#22c55e' : value > 30 ? '#f59e0b' : '#ef4444';
+
+  return (
+    <div className="score-card">
+      <div className="score-ring-wrap">
+        <svg className="score-ring-svg" viewBox="0 0 80 80" width="80" height="80">
+          <circle className="score-ring-bg" cx="40" cy="40" r={r} />
+          <circle
+            className="score-ring-fg"
+            cx="40" cy="40" r={r}
+            stroke={color}
+            strokeDasharray={circ}
+            strokeDashoffset={offset}
+          />
+        </svg>
+        <div className="score-ring-text" style={{ color: textColor }}>
+          {value}
+        </div>
+      </div>
+      <div className="score-name">{name}</div>
+      {label && <div className="score-label">{label}</div>}
+    </div>
+  );
+}
+
+// ─── NPK Bar ──────────────────────────────
+
+function NpkBar({ name, value, color }: { name: string; value: number; color: string }) {
+  const label = value > 60 ? 'Severe' : value > 30 ? 'Moderate' : 'Adequate';
+  return (
+    <div className="npk-row">
+      <div className="npk-header">
+        <span className="npk-name">{name}</span>
+        <span className="npk-val">{value}% deficient – {label}</span>
+      </div>
+      <div className="npk-bar-bg">
+        <div className="npk-bar-fill" style={{ width: `${value}%`, background: color }} />
+      </div>
+    </div>
+  );
+}
+
+// ─── Main App ────────────────────────────
+
+export default function App() {
+  const [step, setStep] = useState<AppStep>('upload');
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageBase64, setImageBase64] = useState('');
+  const [imageMime, setImageMime] = useState('image/jpeg');
+  const [imagePreview, setImagePreview] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [loadingMsg, setLoadingMsg] = useState('');
+  const [toast, setToast] = useState<{ msg: string; error?: boolean } | null>(null);
+  const [cropData, setCropData] = useState<CropAnalysis | null>(null);
+  const [editedCrop, setEditedCrop] = useState<CropAnalysis | null>(null);
+  const [report, setReport] = useState<FullReport | null>(null);
+  const [editMode, setEditMode] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  function showToast(msg: string, error = false) {
+    setToast({ msg, error });
+    setTimeout(() => setToast(null), 4000);
+  }
+
+  function fileToBase64(file: File): Promise<string> {
+    return new Promise((res, rej) => {
+      const reader = new FileReader();
+      reader.onload = () => res((reader.result as string).split(',')[1]);
+      reader.onerror = rej;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  const handleFile = useCallback(async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      showToast('Please upload an image file.', true);
+      return;
+    }
+    setImageFile(file);
+    setImageMime(file.type);
+    setImagePreview(URL.createObjectURL(file));
+    const b64 = await fileToBase64(file);
+    setImageBase64(b64);
+  }, []);
+
+  const onDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  }, [handleFile]);
+
+  async function doStep1Analyze() {
+    if (!imageBase64) { showToast('Please upload a crop image first.', true); return; }
+    setLoading(true);
+    setLoadingMsg('🔍 Analyzing crop image with AI...');
+    try {
+      const result = await analyzeImage(imageBase64, imageMime);
+      setCropData(result);
+      setEditedCrop({ ...result });
+      setStep('verifying');
+    } catch (e: unknown) {
+      showToast(`AI Error: ${(e as Error).message}`, true);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function doStep3Report() {
+    const confirmed = editMode ? editedCrop! : cropData!;
+    setLoading(true);
+    setLoadingMsg('🌱 Generating full crop health report...');
+    try {
+      const full = await generateFullReport(imageBase64, imageMime, confirmed);
+      setReport(full);
+      setStep('results');
+    } catch (e: unknown) {
+      showToast(`Report Error: ${(e as Error).message}`, true);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function resetApp() {
+    setStep('upload');
+    setImageFile(null);
+    setImageBase64('');
+    setImagePreview('');
+    setCropData(null);
+    setEditedCrop(null);
+    setReport(null);
+    setEditMode(false);
+  }
+
+  function getStepIndex() {
+    return ['upload', 'verifying', 'confirmed', 'analyzing', 'results'].indexOf(step);
+  }
+
+  return (
+    <>
+      {/* HEADER */}
+      <header className="header">
+        <div className="header-logo">🌾</div>
+        <div>
+          <div className="header-title">Smart Crop Detector</div>
+          <div className="header-sub">AI-Powered Agricultural Intelligence</div>
+        </div>
+        <div className="header-badge">⚡ Groq + Llama 4</div>
+      </header>
+
+      <main className="app-container">
+
+        {/* STEP INDICATOR */}
+        <div className="step-bar">
+          {['Upload', 'Verify', 'Analysis', 'Results'].map((_, i) => (
+            <div key={i} className={`step-dot ${getStepIndex() === i ? 'active' : getStepIndex() > i ? 'done' : ''}`} title={_} />
+          ))}
+        </div>
+
+        {/* ── STEP 1: UPLOAD ── */}
+        {step === 'upload' && (
+          <div className="card">
+            <div className="card-title">🌿 Upload Crop Image</div>
+            <div className="card-desc">Upload a clear photo of your crop for AI analysis — leaves, soil, or full plant view work best.</div>
+
+
+            {/* DROPZONE */}
+            {!imagePreview ? (
+              <div
+                className={`dropzone ${isDragging ? 'active' : ''}`}
+                onClick={() => fileRef.current?.click()}
+                onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={onDrop}
+                id="dropzone"
+              >
+                <div className="dropzone-icon">📸</div>
+                <div className="dropzone-text">Drop your crop image here</div>
+                <div className="dropzone-sub">or click to browse · JPG, PNG, WEBP supported</div>
+                <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])} />
+              </div>
+            ) : (
+              <div style={{ marginBottom: '1rem' }}>
+                <div className="img-preview-wrap">
+                  <img className="img-preview" src={imagePreview} alt="Crop preview" />
+                  <div className="img-overlay">
+                    <span className="img-badge">✅ Image Ready</span>
+                    <button className="btn btn-danger" style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', borderRadius: '8px' }} onClick={() => { setImagePreview(''); setImageFile(null); setImageBase64(''); }}>✕ Remove</button>
+                  </div>
+                </div>
+                <div style={{ textAlign: 'center', marginTop: '0.5rem', fontSize: '0.78rem', color: 'var(--text-dim)' }}>
+                  {imageFile?.name} · {(imageFile!.size / 1024).toFixed(0)} KB
+                </div>
+              </div>
+            )}
+
+            {loading ? (
+              <div className="loader-wrap" style={{ padding: '2rem' }}>
+                <div className="loader-spinner" />
+                <div className="loader-text">{loadingMsg}</div>
+                <div className="loader-sub">Please wait, this may take a few seconds <span className="pulse-dots"><span /><span /><span /></span></div>
+              </div>
+            ) : (
+              <div className="btn-group">
+                <button className="btn btn-primary" onClick={doStep1Analyze} disabled={!imageBase64} id="analyze-btn">
+                  🔍 Analyze with AI
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── STEP 2: VERIFY ── */}
+        {step === 'verifying' && cropData && (
+          <div>
+            <div className="card" style={{ marginBottom: '1rem' }}>
+              <div className="card-title">✅ Step 1 — AI Detected Results</div>
+              <div className="card-desc">Review what the AI detected. Confirm if correct, or edit the fields below.</div>
+              <div className="result-grid">
+                {[
+                  { icon: '🌾', label: 'Crop Type', value: cropData.crop_type },
+                  { icon: '🪸', label: 'Soil Type', value: cropData.soil_type },
+                  { icon: '🌡️', label: 'Temperature', value: cropData.temperature },
+                ].map(({ icon, label, value }) => (
+                  <div className="result-chip" key={label}>
+                    <div className="result-chip-icon">{icon}</div>
+                    <div className="result-chip-label">{label}</div>
+                    <div className="result-chip-value">{value}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span className="confidence-badge">⚡ Confidence: {cropData.confidence}</span>
+              </div>
+            </div>
+
+            {/* IMAGE THUMBNAIL */}
+            <div className="card" style={{ marginBottom: '1rem' }}>
+              <img src={imagePreview} alt="Uploaded crop" style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '12px' }} />
+            </div>
+
+            {/* EDIT SECTION */}
+            <div className="card">
+              <div className="card-title">📝 Are these details correct?</div>
+              <div className="card-desc">If any field is wrong, toggle edit mode and correct it before generating the full report.</div>
+
+              {editMode && editedCrop ? (
+                <div>
+                  {[
+                    { key: 'crop_type', label: 'Crop Type', icon: '🌾', placeholder: 'e.g., Wheat, Rice, Tomato' },
+                    { key: 'soil_type', label: 'Soil Type', icon: '🪸', placeholder: 'e.g., Loamy, Sandy, Clay' },
+                    { key: 'temperature', label: 'Temperature Range', icon: '🌡️', placeholder: 'e.g., 25–30°C' },
+                  ].map(({ key, label, icon, placeholder }) => (
+                    <div className="form-group" key={key}>
+                      <label className="form-label">{icon} {label}</label>
+                      <input
+                        className="form-input"
+                        value={(editedCrop as Record<string, string>)[key]}
+                        onChange={e => setEditedCrop(p => ({ ...p!, [key]: e.target.value }))}
+                        placeholder={placeholder}
+                        id={`edit-${key}`}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+
+              <div className="btn-group">
+                <button className="btn btn-primary" onClick={doStep3Report} id="confirm-btn">
+                  ✅ Confirm & Generate Report
+                </button>
+                <button className="btn btn-outline" onClick={() => setEditMode(p => !p)} id="edit-toggle-btn">
+                  {editMode ? '❌ Cancel Edit' : '✏️ Edit Details'}
+                </button>
+                <button className="btn btn-danger" onClick={resetApp}>↩ Start Over</button>
+              </div>
+
+              {loading && (
+                <div className="loader-wrap" style={{ padding: '2rem' }}>
+                  <div className="loader-spinner" />
+                  <div className="loader-text">{loadingMsg}</div>
+                  <div className="loader-sub">Generating detailed health analysis <span className="pulse-dots"><span /><span /><span /></span></div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 4-6: RESULTS ── */}
+        {step === 'results' && report && (
+          <div>
+            {/* HEALTH SCORES */}
+            <div className="card" style={{ marginBottom: '1rem' }}>
+              <div className="card-title">📊 Crop Health Dashboard</div>
+              <div className="card-desc">AI-generated health scores based on your crop image and confirmed data.</div>
+
+              <div className="scores-grid">
+                <ScoreRing value={report.health.crop_health_score} name="Overall Health" color="#22c55e" />
+                <ScoreRing value={report.health.nutrition_score} name="Nutrition" color="#f59e0b" />
+                <ScoreRing value={report.health.water_score} name="Water Level" color="#3b82f6" />
+                <ScoreRing value={report.health.disease_risk} name="Disease Risk" color="#ef4444" inverted={true} />
+              </div>
+
+              <div className="npk-section">
+                <div className="npk-title">⚗️ Mineral Deficiency Levels (Higher = More Deficient)</div>
+                <NpkBar name="🟢 Nitrogen (N)" value={report.health.mineral_deficiency.Nitrogen} color="#22c55e" />
+                <NpkBar name="🟠 Phosphorus (P)" value={report.health.mineral_deficiency.Phosphorus} color="#f97316" />
+                <NpkBar name="🟣 Potassium (K)" value={report.health.mineral_deficiency.Potassium} color="#a855f7" />
+              </div>
+            </div>
+
+            {/* INSIGHTS */}
+            <div className="card" style={{ marginBottom: '1rem' }}>
+              <div className="card-title">💡 AI Insights & Explanation</div>
+              <div className="card-desc">Simple explanation of your crop's condition in farmer-friendly language.</div>
+              <div className="insights-grid">
+                <div className="insight-box good">
+                  <div className="insight-box-label">✅ What's Good</div>
+                  <div className="insight-box-text">{report.insights.what_is_good}</div>
+                </div>
+                <div className="insight-box bad">
+                  <div className="insight-box-label">⚠️ What Needs Attention</div>
+                  <div className="insight-box-text">{report.insights.what_is_wrong}</div>
+                </div>
+                <div className="insight-box info">
+                  <div className="insight-box-label">📈 Why These Scores</div>
+                  <div className="insight-box-text">{report.insights.why_scores}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* SOLUTIONS */}
+            <div className="card" style={{ marginBottom: '1rem' }}>
+              <div className="card-title">💊 Solutions & Treatments</div>
+              <div className="card-desc">Practical and actionable solutions to improve your crop health.</div>
+              <div className="solutions-grid">
+                <div className="solution-card">
+                  <div className="solution-card-title" style={{ color: '#22c55e' }}>🏡 Gharelu Nuske</div>
+                  <ul className="solution-list">
+                    {report.solutions.gharelu_nuske.map((s, i) => <li key={i}>{s}</li>)}
+                  </ul>
+                </div>
+                <div className="solution-card">
+                  <div className="solution-card-title" style={{ color: '#f59e0b' }}>🧪 Fertilizers</div>
+                  <ul className="solution-list">
+                    {report.solutions.recommended_fertilizers.map((s, i) => <li key={i}>{s}</li>)}
+                  </ul>
+                </div>
+                <div className="solution-card">
+                  <div className="solution-card-title" style={{ color: '#3b82f6' }}>💧 Watering Tips</div>
+                  <ul className="solution-list">
+                    {report.solutions.watering_suggestions.map((s, i) => <li key={i}>{s}</li>)}
+                  </ul>
+                </div>
+                {report.solutions.disease_treatment.length > 0 && (
+                  <div className="solution-card">
+                    <div className="solution-card-title" style={{ color: '#ef4444' }}>🌿 Disease Treatment</div>
+                    <ul className="solution-list">
+                      {report.solutions.disease_treatment.map((s, i) => <li key={i}>{s}</li>)}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ACTION PLAN */}
+            <div className="card" style={{ marginBottom: '1rem' }}>
+              <div className="card-title">🗺️ Action Plan</div>
+              <div className="card-desc">Follow these steps to improve your crop's health and yield.</div>
+              <div className="action-plan">
+                <div className="action-plan-header">🚜 Your 5-Step Improvement Plan</div>
+                {report.solutions.action_plan.map((step, i) => (
+                  <div className="action-step" key={i}>
+                    <div className="action-step-num">{i + 1}</div>
+                    <div className="action-step-text">{step.replace(/^Step \d+:\s*/i, '')}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* RESET BTN */}
+            <div className="btn-group" style={{ justifyContent: 'center' }}>
+              <button className="btn btn-primary" onClick={resetApp} id="new-analysis-btn">
+                🌱 Analyze Another Crop
+              </button>
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* TOAST */}
+      {toast && (
+        <div className={`toast ${toast.error ? 'error' : ''}`}>
+          {toast.error ? '❌' : '✅'} {toast.msg}
+        </div>
+      )}
+    </>
+  );
+}
