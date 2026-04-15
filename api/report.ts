@@ -13,11 +13,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { imageBase64, mimeType, cropData, location, weather, language = 'en' } = req.body;
+    const { imageBase64, mimeType, cropData, location, weather, language = 'en', fieldImageBase64, fieldImageMimeType } = req.body;
 
     if (!imageBase64 || !mimeType || !cropData) {
       return res.status(400).json({ error: 'imageBase64, mimeType, and cropData are required' });
     }
+
+    const hasFieldImage = Boolean(fieldImageBase64 && fieldImageMimeType);
 
     const prompt = `You are an Advanced AI Crop Health Assistant designed to solve real-world farmer problems with complete intelligence, not just detection.
 Your goal is to Diagnose + Explain + Predict + Guide + Optimize farmer decisions.
@@ -32,7 +34,7 @@ INPUT FORMAT:
   "humidity": "${weather?.humidity ? weather.humidity + '%' : 'Unknown'}",
   "rainfall": "${weather?.rainfall ? weather.rainfall + 'mm' : 'Unknown'}",
   "location": "${location || 'Unknown'}",
-  "images_count": "1",
+  "images_count": "${hasFieldImage ? '2' : '1'}",
   "previous_health": "None provided. Assume 0% past infection unless stated otherwise."
 }
 
@@ -105,8 +107,14 @@ STEP 19: HEALTH SCORE CALCULATION
 STEP 20: ISSUE IDENTIFICATION
 - Clearly list all detected issues.
 
-STEP 21: FINAL OUTPUT FORMAT (STRICT)
-Generate a comprehensive JSON report containing EXACTLY these fields reflecting your massively detailed 21-step reasoning:
+STEP 21: FIELD IMAGE ANALYSIS & PRECISION FARMING (NEW)
+ONLY IF a second "Field Image" was provided (has_field_image = true):
+- Generate a 3x3 Minimap grid representing the farm. Use 🟩 for healthy zones and 🟥 for infected zones based on visual field patterns.
+- Decide if "Spot Treatment" is possible (e.g., only spraying 🟥 zones to save cost) vs "Full Field" treatment.
+- Estimate % of chemical/money saved.
+
+FINAL OUTPUT FORMAT (STRICT)
+Generate a comprehensive JSON report containing EXACTLY these fields reflecting your massively detailed reasoning:
 
 CRITICAL LANGUAGE RULE: 
 You MUST entirely translate ALL string VALUES inside this JSON into the language code "${language}". This is fully mandatory!
@@ -157,33 +165,53 @@ Do NOT use markdown code blocks, just raw JSON.
   },
   "recovery_time": "...",
   "cost_benefit": "...",
-  "spray_plan": "..."
+  "spray_plan": "...",
+  "field_analyzer": {
+    "has_field_image": ${hasFieldImage},
+    "total_affected_percent": "e.g., 30%",
+    "infection_pattern": "e.g., Localized in the North-East",
+    "risk_level": "e.g., Medium Spread Risk",
+    "minimap": {
+      "grid": [["🟩", "🟩", "🟥"], ["🟩", "🟩", "🟩"], ["🟩", "🟩", "🟩"]],
+      "location_desc": "Infection localized to top right corner"
+    },
+    "spot_treatment": {
+      "is_spot_treatment": true,
+      "cost_saved_percent": "35%",
+      "money_saved_per_acre": "$40",
+      "instruction": "Only spray the upper right sector...",
+      "reason": "Because infection has not spread to left or bottom..."
+    }
+  }
 }
 
 Keep language simple and farmer-friendly in the target language. Be highly detailed. Return ONLY valid JSON.`;
+
+    const userContent: any[] = [
+      { type: 'text', text: prompt },
+      { type: 'image_url', image_url: { url: \`data:\${mimeType};base64,\${imageBase64}\` } }
+    ];
+
+    if (hasFieldImage) {
+      userContent.push({ type: 'image_url', image_url: { url: \`data:\${fieldImageMimeType};base64,\${fieldImageBase64}\` } });
+    }
 
     const response = await fetch(GROQ_API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
+        'Authorization': \`Bearer \${apiKey}\`,
       },
       body: JSON.stringify({
-        model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+        model: 'llama-3.2-90b-vision-preview',
         messages: [
           {
             role: 'system',
-            content: `You are an advanced Agri-AI assistant. Always respond with valid JSON only, no extra text or markdown. CRITICAL: You must translate EVERY string value in the JSON response to the language code '${language}'. The JSON keys must remain strictly in English.`,
+            content: \`You are an advanced Agri-AI assistant. Always respond with valid JSON only, no extra text or markdown. CRITICAL: You must translate EVERY string value in the JSON response to the language code '\${language}'. The JSON keys must remain strictly in English.\`,
           },
           {
             role: 'user',
-            content: [
-              { type: 'text', text: prompt },
-              {
-                type: 'image_url',
-                image_url: { url: `data:${mimeType};base64,${imageBase64}` },
-              },
-            ],
+            content: userContent,
           },
         ],
         max_tokens: 2048,

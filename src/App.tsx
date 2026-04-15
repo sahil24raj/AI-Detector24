@@ -50,6 +50,12 @@ export default function App() {
   const [imageMime, setImageMime] = useState('image/jpeg');
   const [imagePreview, setImagePreview] = useState('');
   const [isDragging, setIsDragging] = useState(false);
+  const [fieldImageFile, setFieldImageFile] = useState<File | null>(null);
+  const [fieldImageBase64, setFieldImageBase64] = useState('');
+  const [fieldImageMime, setFieldImageMime] = useState('image/jpeg');
+  const [fieldImagePreview, setFieldImagePreview] = useState('');
+  const [isFieldDragging, setIsFieldDragging] = useState(false);
+  const fieldFileRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState('');
   const [toast, setToast] = useState<{ msg: string; error?: boolean } | null>(null);
@@ -139,6 +145,25 @@ export default function App() {
     if (file) handleFile(file);
   }, [handleFile]);
 
+  const handleFieldFile = useCallback(async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      showToast('Please upload an image file.', true);
+      return;
+    }
+    setFieldImageFile(file);
+    setFieldImageMime(file.type);
+    setFieldImagePreview(URL.createObjectURL(file));
+    const b64 = await fileToBase64(file);
+    setFieldImageBase64(b64);
+  }, []);
+
+  const onFieldDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsFieldDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) handleFieldFile(file);
+  }, [handleFieldFile]);
+
   async function doStep1Analyze() {
     if (!imageBase64) { showToast('Please upload a crop image first.', true); return; }
     setLoading(true);
@@ -168,7 +193,7 @@ export default function App() {
       if (weatherData) {
         locationContext += ` | Current Weather: Temp ${weatherData.temp}°C, Humidity ${weatherData.humidity}%, Rainfall ${weatherData.rainfall}mm`;
       }
-      const full = await generateFullReport(imageBase64, imageMime, confirmed, locationContext, weatherData, language);
+      const full = await generateFullReport(imageBase64, imageMime, confirmed, locationContext, weatherData, language, fieldImageBase64, fieldImageMime);
       setReport(full);
       setStep('results');
     } catch (e: unknown) {
@@ -183,6 +208,9 @@ export default function App() {
     setImageFile(null);
     setImageBase64('');
     setImagePreview('');
+    setFieldImageFile(null);
+    setFieldImageBase64('');
+    setFieldImagePreview('');
     setCropData(null);
     setEditedCrop(null);
     setReport(null);
@@ -232,78 +260,117 @@ export default function App() {
             <div className="card-title">🌿 Upload Crop Image</div>
             <div className="card-desc">Upload a clear photo of your crop for AI analysis — leaves, soil, or full plant view work best.</div>
 
-
-            {/* DROPZONE */}
-            {!imagePreview ? (
-              <div
-                className={`dropzone ${isDragging ? 'active' : ''}`}
-                onClick={() => fileRef.current?.click()}
-                onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
-                onDragLeave={() => setIsDragging(false)}
-                onDrop={onDrop}
-                id="dropzone"
-              >
-                <div className="dropzone-icon">📸</div>
-                <div className="dropzone-text">{t('dropzone_title')}</div>
-                <div className="dropzone-sub">{t('dropzone_sub')}</div>
-                <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])} />
-              </div>
-            ) : (
-              <div style={{ marginBottom: '1rem' }}>
-                <div className="img-preview-wrap">
-                  <img className="img-preview" src={imagePreview} alt="Crop preview" />
-                  <div className="img-overlay">
-                    <span className="img-badge">✅ {t('image_ready')}</span>
-                    <button className="btn btn-danger" style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', borderRadius: '8px' }} onClick={() => { setImagePreview(''); setImageFile(null); setImageBase64(''); }}>✕ {t('remove')}</button>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
+              {/* DROPZONE 1 */}
+              <div>
+                <div style={{ fontWeight: 'bold', marginBottom: '0.5rem', color: 'var(--text-bright)' }}>1. Close-up Leaf Image <span style={{color: '#f87171'}}>*</span></div>
+                {!imagePreview ? (
+                  <div
+                    className={`dropzone ${isDragging ? 'active' : ''}`}
+                    onClick={() => fileRef.current?.click()}
+                    onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
+                    onDragLeave={() => setIsDragging(false)}
+                    onDrop={onDrop}
+                    id="dropzone"
+                  >
+                    <div className="dropzone-icon">📸</div>
+                    <div className="dropzone-text">{t('dropzone_title')}</div>
+                    <div className="dropzone-sub">{t('dropzone_sub')}</div>
+                    <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if(e.target.files?.[0]) handleFile(e.target.files[0]); }} />
                   </div>
-                </div>
-                <div style={{ textAlign: 'center', marginTop: '0.5rem', fontSize: '0.78rem', color: 'var(--text-dim)' }}>
-                  {imageFile?.name} · {(imageFile!.size / 1024).toFixed(0)} KB
-                </div>
-                {(locationName || weatherData || isLocating) && (
-                  <div className="env-dashboard">
-                    {isLocating && <div className="env-detecting"><span className="loader-spinner-small"></span> Detecting environmental data...</div>}
-                    
-                    {locationName && !isLocating && (
-                      <div className="env-location">
-                        <div className="env-icon">📍</div>
-                        <div className="env-info">
-                          <div className="env-label">Detected Location</div>
-                          <div className="env-value">{locationName}</div>
-                        </div>
+                ) : (
+                  <div>
+                    <div className="img-preview-wrap">
+                      <img className="img-preview" src={imagePreview} alt="Crop preview" />
+                      <div className="img-overlay">
+                        <span className="img-badge">✅ {t('image_ready')}</span>
+                        <button className="btn btn-danger" style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', borderRadius: '8px' }} onClick={() => { setImagePreview(''); setImageFile(null); setImageBase64(''); }}>✕ {t('remove')}</button>
                       </div>
-                    )}
-                    
-                    {weatherData && !isLocating && (
-                      <div className="env-weather-grid">
-                        <div className="env-stat">
-                           <div className="env-stat-icon">🌡️</div>
-                           <div className="env-stat-details">
-                             <div className="env-stat-label">Temperature</div>
-                             <div className="env-stat-val">{weatherData.temp}°C</div>
-                           </div>
-                        </div>
-                        <div className="env-stat">
-                           <div className="env-stat-icon">💧</div>
-                           <div className="env-stat-details">
-                             <div className="env-stat-label">Humidity</div>
-                             <div className="env-stat-val">{weatherData.humidity}%</div>
-                           </div>
-                        </div>
-                        <div className="env-stat">
-                           <div className="env-stat-icon">🌧️</div>
-                           <div className="env-stat-details">
-                             <div className="env-stat-label">Rainfall</div>
-                             <div className="env-stat-val">{weatherData.rainfall}mm</div>
-                           </div>
-                        </div>
+                    </div>
+                    <div style={{ textAlign: 'center', marginTop: '0.5rem', fontSize: '0.78rem', color: 'var(--text-dim)' }}>
+                      {imageFile?.name} · {(imageFile!.size / 1024).toFixed(0)} KB
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* DROPZONE 2 */}
+              <div>
+                <div style={{ fontWeight: 'bold', marginBottom: '0.5rem', color: 'var(--text-bright)' }}>2. Wide Field View (Optional)</div>
+                {!fieldImagePreview ? (
+                  <div
+                    className={`dropzone ${isFieldDragging ? 'active' : ''}`}
+                    onClick={() => fieldFileRef.current?.click()}
+                    onDragOver={e => { e.preventDefault(); setIsFieldDragging(true); }}
+                    onDragLeave={() => setIsFieldDragging(false)}
+                    onDrop={onFieldDrop}
+                  >
+                    <div className="dropzone-icon">🗺️</div>
+                    <div className="dropzone-text">Upload Field Area</div>
+                    <div className="dropzone-sub">Upload a wide shot of your farm layout for Spot Treatment insights.</div>
+                    <input ref={fieldFileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if(e.target.files?.[0]) handleFieldFile(e.target.files[0]); }} />
+                  </div>
+                ) : (
+                  <div>
+                    <div className="img-preview-wrap">
+                      <img className="img-preview" src={fieldImagePreview} alt="Field preview" />
+                      <div className="img-overlay">
+                        <span className="img-badge">✅ Field Ready</span>
+                        <button className="btn btn-danger" style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', borderRadius: '8px' }} onClick={() => { setFieldImagePreview(''); setFieldImageFile(null); setFieldImageBase64(''); }}>✕ Remove</button>
                       </div>
-                    )}
+                    </div>
+                    <div style={{ textAlign: 'center', marginTop: '0.5rem', fontSize: '0.78rem', color: 'var(--text-dim)' }}>
+                      {fieldImageFile?.name} · {(fieldImageFile!.size / 1024).toFixed(0)} KB
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ENVIRONMENTAL STATS */}
+            {(locationName || weatherData || isLocating) && (
+              <div className="env-dashboard">
+                {isLocating && <div className="env-detecting"><span className="loader-spinner-small"></span> Detecting environmental data...</div>}
+                
+                {locationName && !isLocating && (
+                  <div className="env-location">
+                    <div className="env-icon">📍</div>
+                    <div className="env-info">
+                      <div className="env-label">Detected Location</div>
+                      <div className="env-value">{locationName}</div>
+                    </div>
+                  </div>
+                )}
+                
+                {weatherData && !isLocating && (
+                  <div className="env-weather-grid">
+                    <div className="env-stat">
+                        <div className="env-stat-icon">🌡️</div>
+                        <div className="env-stat-details">
+                          <div className="env-stat-label">Temperature</div>
+                          <div className="env-stat-val">{weatherData.temp}°C</div>
+                        </div>
+                    </div>
+                    <div className="env-stat">
+                        <div className="env-stat-icon">💧</div>
+                        <div className="env-stat-details">
+                          <div className="env-stat-label">Humidity</div>
+                          <div className="env-stat-val">{weatherData.humidity}%</div>
+                        </div>
+                    </div>
+                    <div className="env-stat">
+                        <div className="env-stat-icon">🌧️</div>
+                        <div className="env-stat-details">
+                          <div className="env-stat-label">Rainfall</div>
+                          <div className="env-stat-val">{weatherData.rainfall}mm</div>
+                        </div>
+                    </div>
                   </div>
                 )}
               </div>
             )}
 
+            {/* ACTION BUTTON */}
             {loading ? (
               <div className="loader-wrap" style={{ padding: '2rem' }}>
                 <div className="loader-spinner" />
@@ -431,6 +498,76 @@ export default function App() {
                 <ScoreRing value={report.metrics.disease_impact} name="Disease Impact" color="#ef4444" inverted={true} />
               </div>
             </div>
+
+            {/* FIELD ANALYZER */}
+            {report.field_analyzer?.has_field_image && report.field_analyzer.minimap && (
+              <div className="card" style={{ marginBottom: '1rem', border: '2px solid #3b82f6', background: 'linear-gradient(to bottom, #1e293b, rgba(15, 23, 42, 0.95))' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                  <div style={{ background: '#3b82f6', color: '#fff', padding: '0.25rem 0.5rem', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 'bold' }}>PRECISION AI</div>
+                  <div className="card-title" style={{ margin: 0 }}>🗺️ Field Analyzer & Minimap</div>
+                </div>
+                <div className="card-desc">Visual mapping of infection based on your wide-field shot to calculate cost-saving Spot Treatments.</div>
+                
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', marginTop: '1.5rem' }}>
+                  {/* Grid */}
+                  <div style={{ flex: '0 0 auto' }}>
+                    <div style={{ background: '#0f172a', padding: '1rem', borderRadius: '12px', border: '1px solid #334155' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        {report.field_analyzer.minimap.grid?.map((row, r) => (
+                          <div key={r} style={{ display: 'flex', gap: '4px' }}>
+                            {row.map((cell, c) => (
+                              <div key={c} style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', background: cell.includes('🟥') ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)', borderRadius: '4px', border: `1px solid ${cell.includes('🟥') ? '#ef4444' : '#22c55e'}` }}>
+                                {cell}
+                              </div>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{ marginTop: '0.75rem', fontSize: '0.85rem', color: 'var(--text-dim)', textAlign: 'center', maxWidth: '140px' }}>
+                        {report.field_analyzer.minimap.location_desc}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Spot Treatment Info */}
+                  <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                       <div className="insight-box info" style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', flex: 1 }}>
+                         <div className="insight-box-label" style={{ color: '#60a5fa' }}>Pattern Detection</div>
+                         <div className="insight-box-text" style={{ marginTop: '0.5rem' }}>{report.field_analyzer.infection_pattern}</div>
+                       </div>
+                       <div className="insight-box info" style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', flex: 1 }}>
+                         <div className="insight-box-label" style={{ color: '#34d399' }}>Total Affected</div>
+                         <div className="insight-box-text" style={{ marginTop: '0.5rem', fontSize: '1.25rem', fontWeight: 'bold' }}>{report.field_analyzer.total_affected_percent}</div>
+                       </div>
+                    </div>
+
+                    {report.field_analyzer.spot_treatment?.is_spot_treatment ? (
+                      <div style={{ background: 'rgba(34, 197, 94, 0.1)', border: '1px solid #4ade80', borderRadius: '12px', padding: '1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#4ade80', fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '0.5rem' }}>
+                          🎯 Spot Treatment Recommended
+                        </div>
+                        <div style={{ color: '#bbf7d0', marginBottom: '0.5rem' }}>{report.field_analyzer.spot_treatment.instruction}</div>
+                        <div style={{ color: 'var(--text-dim)', fontSize: '0.9rem', marginBottom: '1rem' }}>{report.field_analyzer.spot_treatment.reason}</div>
+                        
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                          <span style={{ background: '#22c55e', color: '#000', padding: '4px 8px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.9rem' }}>Savings: {report.field_analyzer.spot_treatment.cost_saved_percent}</span>
+                          <span style={{ background: '#064e3b', color: '#34d399', padding: '4px 8px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.9rem' }}>{report.field_analyzer.spot_treatment.money_saved_per_acre} Saved/Acre</span>
+                        </div>
+                      </div>
+                    ) : (
+                       <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #f87171', borderRadius: '12px', padding: '1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f87171', fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '0.5rem' }}>
+                          ⚠️ Full Field Treatment Required
+                        </div>
+                        <div style={{ color: '#fecaca' }}>{report.field_analyzer.spot_treatment?.instruction || 'No spot treatment available for this spread pattern.'}</div>
+                        <div style={{ color: 'var(--text-dim)', fontSize: '0.9rem', marginTop: '0.5rem' }}>{report.field_analyzer.spot_treatment?.reason}</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* ISSUES & DISEASE */}
             <div className="card" style={{ marginBottom: '1rem' }}>
