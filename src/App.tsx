@@ -423,6 +423,7 @@ export default function App() {
 
               <div className="scores-grid">
                 <ScoreRing value={report.health_score} name="Overall Health" color="#22c55e" />
+                <ScoreRing value={report.farm_score} name="Farm Score" color="#0ea5e9" />
                 <ScoreRing value={report.metrics.leaf_health} name="Leaf Health" color="#10b981" />
                 <ScoreRing value={report.metrics.soil_health} name="Soil Health" color="#8b5cf6" />
                 <ScoreRing value={report.metrics.water_score} name="Water Score" color="#3b82f6" />
@@ -450,13 +451,27 @@ export default function App() {
                     <div><strong>Name:</strong> {report.disease_pest.name}</div>
                     <div><strong>Severity:</strong> {report.disease_pest.severity}</div>
                     <div><strong>Spread Risk:</strong> {report.disease_pest.spread_risk}</div>
+                    <div style={{ marginTop: '0.5rem', borderTop: '1px solid rgba(252, 211, 77, 0.2)', paddingTop: '0.5rem' }}>
+                      <strong>📈 Progress:</strong> {report.progress}
+                    </div>
                   </div>
                 </div>
 
                 <div className="insight-box info" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)' }}>
-                  <div className="insight-box-label" style={{ color: '#f87171' }}>⚠️ Early Warning System</div>
-                  <div className="insight-box-text" style={{ color: '#fca5a5', marginTop: '0.5rem' }}>{report.early_warning}</div>
+                  <div className="insight-box-label" style={{ color: '#f87171' }}>⚠️ Early Warning & Risk</div>
+                  <div className="insight-box-text" style={{ color: '#fca5a5', marginTop: '0.5rem' }}>
+                    <strong>Risk Level:</strong> {report.risk_meter.level} ({report.risk_meter.probability})<br/>
+                    <span style={{ display: 'block', marginTop: '0.5rem' }}>{report.early_warning}</span>
+                  </div>
                 </div>
+              </div>
+            </div>
+
+            {/* ROOT CAUSE */}
+            <div className="card" style={{ marginBottom: '1rem' }}>
+              <div className="card-title">🧠 Root Cause Analysis</div>
+              <div className="card-desc" style={{ color: '#fbbf24', marginTop: '0.5rem', fontWeight: 500 }}>
+                {report.root_cause}
               </div>
             </div>
 
@@ -480,18 +495,64 @@ export default function App() {
               </div>
             </div>
 
-            {/* SOLUTIONS */}
+            {/* TARGETED SOLUTIONS */}
             <div className="card" style={{ marginBottom: '1rem' }}>
               <div className="card-title">💡 Smart Recommendations</div>
               <div className="card-desc">Practical, localized, and actionable advice to improve crop health.</div>
-              <div className="action-plan">
-                <div className="action-plan-header">🚜 Recommended Actions</div>
-                {report.recommendations.map((rec, i) => (
-                  <div className="action-step" key={i}>
-                     <div className="action-step-num">✓</div>
-                     <div className="action-step-text" style={{ padding: '0.5rem 0' }}>{rec}</div>
-                  </div>
-                ))}
+              
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
+                 <div className="action-plan" style={{ background: 'rgba(34, 197, 94, 0.05)', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
+                   <div className="action-plan-header" style={{ color: '#4ade80' }}>🌿 Organic Solutions</div>
+                   {report.smart_solutions?.organic?.map((rec, i) => (
+                     <div className="action-step" key={i}>
+                        <div className="action-step-num" style={{ background: '#4ade80', color: '#000' }}>✓</div>
+                        <div className="action-step-text" style={{ padding: '0.5rem 0' }}>{rec}</div>
+                     </div>
+                   ))}
+                 </div>
+                 
+                 <div className="action-plan" style={{ background: 'rgba(56, 189, 248, 0.05)', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
+                   <div className="action-plan-header" style={{ color: '#38bdf8' }}>🧪 Chemical Solutions</div>
+                   {report.smart_solutions?.chemical?.map((rec, i) => (
+                     <div className="action-step" key={i}>
+                        <div className="action-step-num" style={{ background: '#38bdf8', color: '#000' }}>⚠</div>
+                        <div className="action-step-text" style={{ padding: '0.5rem 0' }}>{rec}</div>
+                     </div>
+                   ))}
+                 </div>
+              </div>
+
+              {/* GENERAL RECOMMENDATIONS */}
+              {report.recommendations && report.recommendations.length > 0 && (
+                 <div className="action-plan" style={{ marginTop: '1rem' }}>
+                   <div className="action-plan-header">📝 General Advice</div>
+                   {report.recommendations.map((rec, i) => (
+                     <div className="action-step" key={i}>
+                        <div className="action-step-num">👉</div>
+                        <div className="action-step-text" style={{ padding: '0.5rem 0' }}>{rec}</div>
+                     </div>
+                   ))}
+                 </div>
+              )}
+            </div>
+
+            {/* OPERATIONS & FINANCIALS */}
+            <div className="card" style={{ marginBottom: '1rem' }}>
+              <div className="card-title">💰 Farm Operations & Cost Analysis</div>
+              <div className="card-desc">Estimated financial impacts and action requirements per acre.</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
+                <div className="insight-box info" style={{ backgroundColor: 'rgba(251, 191, 36, 0.1)' }}>
+                  <div className="insight-box-label" style={{ color: '#fbbf24' }}>⏳ Recovery Time Prediction</div>
+                  <div className="insight-box-text" style={{ color: '#fde68a', marginTop: '0.5rem' }}>{report.recovery_time}</div>
+                </div>
+                <div className="insight-box info" style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}>
+                  <div className="insight-box-label" style={{ color: '#34d399' }}>💵 Cost vs Benefit</div>
+                  <div className="insight-box-text" style={{ color: '#6ee7b7', marginTop: '0.5rem' }}>{report.cost_benefit}</div>
+                </div>
+                <div className="insight-box info" style={{ backgroundColor: 'rgba(56, 189, 248, 0.1)' }}>
+                  <div className="insight-box-label" style={{ color: '#38bdf8' }}>🚜 Spray & Fertilizer Calculator</div>
+                  <div className="insight-box-text" style={{ color: '#bae6fd', marginTop: '0.5rem' }}>{report.spray_plan}</div>
+                </div>
               </div>
             </div>
 
