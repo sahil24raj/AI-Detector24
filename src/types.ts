@@ -29,12 +29,21 @@ export interface HealthMetrics {
 
 export interface FullReport {
   crop: string;
+  stage: string;
   health_score: number;
   metrics: HealthMetrics;
   issues_detected: string[];
   disease_pest: DiseasePest;
   analysis: DetailedAnalysis;
   recommendations: string[];
+  irrigation_advice: string;
+  early_warning: string;
+  similar_case: string;
+  action_plan: {
+    day_1_2: string;
+    day_3_5: string;
+    day_7_plus: string;
+  };
 }
 
 export type AppStep = 'upload' | 'verifying' | 'confirmed' | 'analyzing' | 'results';

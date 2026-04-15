@@ -408,7 +408,18 @@ export default function App() {
             {/* HEALTH SCORES */}
             <div className="card" style={{ marginBottom: '1rem' }}>
               <div className="card-title">📊 Crop Health Dashboard</div>
-              <div className="card-desc">AI-generated health scores based on your crop image and the 9-step environment analysis.</div>
+              <div className="card-desc">AI-generated health scores based on your crop image and the 14-step analysis.</div>
+              
+              <div style={{ margin: '1rem 0', padding: '1rem', background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-bright)' }}>{report.crop}</div>
+                  <div style={{ color: 'var(--text-dim)', fontSize: '0.9rem', marginTop: '0.25rem' }}>🌱 Stage: {report.stage}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: report.health_score > 79 ? '#22c55e' : report.health_score > 49 ? '#f59e0b' : '#ef4444' }}>{report.health_score}/100</div>
+                  <div style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>Overall Health</div>
+                </div>
+              </div>
 
               <div className="scores-grid">
                 <ScoreRing value={report.health_score} name="Overall Health" color="#22c55e" />
@@ -440,6 +451,11 @@ export default function App() {
                     <div><strong>Severity:</strong> {report.disease_pest.severity}</div>
                     <div><strong>Spread Risk:</strong> {report.disease_pest.spread_risk}</div>
                   </div>
+                </div>
+
+                <div className="insight-box info" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)' }}>
+                  <div className="insight-box-label" style={{ color: '#f87171' }}>⚠️ Early Warning System</div>
+                  <div className="insight-box-text" style={{ color: '#fca5a5', marginTop: '0.5rem' }}>{report.early_warning}</div>
                 </div>
               </div>
             </div>
@@ -476,6 +492,42 @@ export default function App() {
                      <div className="action-step-text" style={{ padding: '0.5rem 0' }}>{rec}</div>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            {/* ADVICE & SIMILAR CASES */}
+            <div className="card" style={{ marginBottom: '1rem' }}>
+              <div className="card-title">🌐 External Insights</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
+                <div className="insight-box info" style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)' }}>
+                  <div className="insight-box-label" style={{ color: '#60a5fa' }}>⏰ Irrigation Timing</div>
+                  <div className="insight-box-text" style={{ color: '#93c5fd', marginTop: '0.5rem' }}>{report.irrigation_advice}</div>
+                </div>
+                <div className="insight-box info" style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}>
+                  <div className="insight-box-label" style={{ color: '#34d399' }}>📊 Similar Case Insight</div>
+                  <div className="insight-box-text" style={{ color: '#6ee7b7', marginTop: '0.5rem' }}>{report.similar_case}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* TIMELINE ACTION PLAN */}
+            <div className="card" style={{ marginBottom: '1rem' }}>
+              <div className="card-title">🗓️ Severity Action Plan</div>
+              <div className="card-desc">Step-by-step treatment schedule.</div>
+              
+              <div className="timeline-container" style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                 <div className="timeline-item" style={{ borderLeft: '4px solid #ef4444', paddingLeft: '1rem' }}>
+                    <h4 style={{ color: '#ef4444', margin: '0 0 0.5rem 0' }}>Day 1-2: Immediate Action</h4>
+                    <p style={{ margin: 0, color: 'var(--text-dim)' }}>{report.action_plan.day_1_2}</p>
+                 </div>
+                 <div className="timeline-item" style={{ borderLeft: '4px solid #f59e0b', paddingLeft: '1rem' }}>
+                    <h4 style={{ color: '#f59e0b', margin: '0 0 0.5rem 0' }}>Day 3-5: Treatment</h4>
+                    <p style={{ margin: 0, color: 'var(--text-dim)' }}>{report.action_plan.day_3_5}</p>
+                 </div>
+                 <div className="timeline-item" style={{ borderLeft: '4px solid #22c55e', paddingLeft: '1rem' }}>
+                    <h4 style={{ color: '#22c55e', margin: '0 0 0.5rem 0' }}>Day 7+: Monitoring</h4>
+                    <p style={{ margin: 0, color: 'var(--text-dim)' }}>{report.action_plan.day_7_plus}</p>
+                 </div>
               </div>
             </div>
 
