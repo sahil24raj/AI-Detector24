@@ -173,7 +173,7 @@ Keep language simple and farmer-friendly in the target language. Be highly detai
         messages: [
           {
             role: 'system',
-            content: \`You are an advanced Agri-AI assistant. Always respond with valid JSON only, no extra text or markdown. CRITICAL: You must translate EVERY string value in the JSON response to the language code '\${language}'. The JSON keys must remain strictly in English.\`,
+            content: `You are an advanced Agri-AI assistant. Always respond with valid JSON only, no extra text or markdown. CRITICAL: You must translate EVERY string value in the JSON response to the language code '${language}'. The JSON keys must remain strictly in English.`,
           },
           {
             role: 'user',
