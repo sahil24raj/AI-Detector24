@@ -264,19 +264,45 @@ export default function App() {
                 <div style={{ textAlign: 'center', marginTop: '0.5rem', fontSize: '0.78rem', color: 'var(--text-dim)' }}>
                   {imageFile?.name} · {(imageFile!.size / 1024).toFixed(0)} KB
                 </div>
-                {locationName && (
-                  <div style={{ textAlign: 'center', marginTop: '0.25rem', fontSize: '0.85rem', color: 'var(--text-dim)' }}>
-                    📍 Location: {locationName}
-                  </div>
-                )}
-                {weatherData && (
-                  <div style={{ textAlign: 'center', marginTop: '0.25rem', fontSize: '0.85rem', color: 'var(--text-dim)' }}>
-                    🌡️ Temp: {weatherData.temp}°C | 💧 Humidity: {weatherData.humidity}% | 🌧️ Rainfall: {weatherData.rainfall}mm
-                  </div>
-                )}
-                {isLocating && (
-                  <div style={{ textAlign: 'center', marginTop: '0.25rem', fontSize: '0.85rem', color: 'var(--text-dim)' }}>
-                    📍 Detecting location...
+                {(locationName || weatherData || isLocating) && (
+                  <div className="env-dashboard">
+                    {isLocating && <div className="env-detecting"><span className="loader-spinner-small"></span> Detecting environmental data...</div>}
+                    
+                    {locationName && !isLocating && (
+                      <div className="env-location">
+                        <div className="env-icon">📍</div>
+                        <div className="env-info">
+                          <div className="env-label">Detected Location</div>
+                          <div className="env-value">{locationName}</div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {weatherData && !isLocating && (
+                      <div className="env-weather-grid">
+                        <div className="env-stat">
+                           <div className="env-stat-icon">🌡️</div>
+                           <div className="env-stat-details">
+                             <div className="env-stat-label">Temperature</div>
+                             <div className="env-stat-val">{weatherData.temp}°C</div>
+                           </div>
+                        </div>
+                        <div className="env-stat">
+                           <div className="env-stat-icon">💧</div>
+                           <div className="env-stat-details">
+                             <div className="env-stat-label">Humidity</div>
+                             <div className="env-stat-val">{weatherData.humidity}%</div>
+                           </div>
+                        </div>
+                        <div className="env-stat">
+                           <div className="env-stat-icon">🌧️</div>
+                           <div className="env-stat-details">
+                             <div className="env-stat-label">Rainfall</div>
+                             <div className="env-stat-val">{weatherData.rainfall}mm</div>
+                           </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
