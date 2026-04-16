@@ -16,18 +16,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { 
       imageBase64, 
       mimeType, 
-      confirmedData, 
+      cropData, 
       location, 
-      weatherData, 
+      weather, 
       language = 'en' 
     } = req.body;
 
-    if (!imageBase64 || !mimeType || !confirmedData) {
+    if (!imageBase64 || !mimeType || !cropData) {
       return res.status(400).json({ error: 'Required data missing' });
     }
 
-    const weatherContext = weatherData 
-      ? `Current Weather: Temp ${weatherData.temp}°C, Humidity ${weatherData.humidity}%, Rainfall ${weatherData.rainfall}mm.`
+    const weatherContext = weather 
+      ? `Current Weather: Temp ${weather.temp}°C, Humidity ${weather.humidity}%, Rainfall ${weather.rainfall}mm.`
       : 'Weather data not available.';
 
     const prompt = `You are a world-class agricultural scientist and plant pathologist. 
@@ -38,11 +38,11 @@ USER CONTEXT:
 - ${weatherContext}
 
 CONFIRMED INITIAL ANALYSIS:
-- Crop Type: ${confirmedData.crop_type}
-- Soil: ${confirmedData.soil_type}
-- Temp: ${confirmedData.temperature}
-- Disease Detected: ${confirmedData.disease}
-- Affected Area: ${confirmedData.affected_area}
+- Crop Type: ${cropData.crop_type}
+- Soil: ${cropData.soil_type}
+- Temp: ${cropData.temperature}
+- Disease Detected: ${cropData.disease}
+- Affected Area: ${cropData.affected_area}
 
 YOUR TASK:
 Provide a 14-step granular health report. Analyze leaf symptoms, nutrient deficiencies, and environmental stressors based on the visual and textual data.
