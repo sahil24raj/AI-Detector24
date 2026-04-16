@@ -27,8 +27,7 @@ export interface HealthMetrics {
   disease_impact: number;
 }
 
-export interface FieldAnalyzer {
-  has_field_image: boolean;
+export interface FieldReport {
   total_affected_percent: string;
   infection_pattern: string;
   risk_level: string;
@@ -76,7 +75,7 @@ export interface FullReport {
   recovery_time: string;
   cost_benefit: string;
   spray_plan: string;
-  field_analyzer: FieldAnalyzer;
 }
 
 export type AppStep = 'upload' | 'verifying' | 'confirmed' | 'analyzing' | 'results';
+export type AppTab = 'crop' | 'field';

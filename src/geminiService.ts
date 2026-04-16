@@ -1,4 +1,4 @@
-import type { CropAnalysis, FullReport } from './types';
+import type { CropAnalysis, FullReport, FieldReport } from './types';
 
 export async function analyzeImage(imageBase64: string, mimeType: string, location: string, language: string = 'en'): Promise<CropAnalysis> {
   const response = await fetch('/api/analyze', {
@@ -15,16 +15,31 @@ export async function analyzeImage(imageBase64: string, mimeType: string, locati
   return response.json();
 }
 
-export async function generateFullReport(imageBase64: string, mimeType: string, cropData: CropAnalysis, location: string, weather: any, language: string = 'en', fieldImageBase64?: string, fieldImageMimeType?: string): Promise<FullReport> {
+export async function generateFullReport(imageBase64: string, mimeType: string, cropData: CropAnalysis, location: string, weather: any, language: string = 'en'): Promise<FullReport> {
   const response = await fetch('/api/report', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ imageBase64, mimeType, cropData, location, weather, language, fieldImageBase64, fieldImageMimeType }),
+    body: JSON.stringify({ imageBase64, mimeType, cropData, location, weather, language }),
   });
 
   if (!response.ok) {
     const err = await response.json();
     throw new Error(err?.error || 'Report generation failed');
+  }
+
+  return response.json();
+}
+
+export async function analyzeFieldImage(fieldImageBase64: string, fieldImageMimeType: string, language: string = 'en'): Promise<FieldReport> {
+  const response = await fetch('/api/analyze-field', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fieldImageBase64, fieldImageMimeType, language }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err?.error || 'Field Analysis failed');
   }
 
   return response.json();

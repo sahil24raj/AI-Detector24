@@ -13,13 +13,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { imageBase64, mimeType, cropData, location, weather, language = 'en', fieldImageBase64, fieldImageMimeType } = req.body;
+    const { imageBase64, mimeType, cropData, location, weather, language = 'en' } = req.body;
 
     if (!imageBase64 || !mimeType || !cropData) {
       return res.status(400).json({ error: 'imageBase64, mimeType, and cropData are required' });
     }
 
-    const hasFieldImage = Boolean(fieldImageBase64 && fieldImageMimeType);
+    const hasFieldImage = false; // Moved to standalone analyzer
 
     const prompt = `You are an Advanced AI Crop Health Assistant designed to solve real-world farmer problems with complete intelligence, not just detection.
 Your goal is to Diagnose + Explain + Predict + Guide + Optimize farmer decisions.
@@ -193,7 +193,7 @@ Keep language simple and farmer-friendly in the target language. Be highly detai
     ];
 
     if (hasFieldImage) {
-      userContent.push({ type: 'image_url', image_url: { url: `data:${fieldImageMimeType};base64,${fieldImageBase64}` } });
+      // Not processed here anymore
     }
 
     const response = await fetch(GROQ_API_URL, {
@@ -227,6 +227,10 @@ Keep language simple and farmer-friendly in the target language. Be highly detai
 
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content || '{}';
+    
+    // Server-side delay of 3 seconds as requested
+    await new Promise(resolve => setTimeout(resolve, 3000));
+
     return res.status(200).json(JSON.parse(content));
   } catch (error: unknown) {
     return res.status(500).json({ error: (error as Error).message || 'Internal server error' });

@@ -81,6 +81,10 @@ If unsure, give best possible estimation instead of refusing.`;
 
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content || '{}';
+
+    // Server-side delay of 3 seconds as requested
+    await new Promise(resolve => setTimeout(resolve, 3000));
+
     return res.status(200).json(JSON.parse(content));
   } catch (error: unknown) {
     return res.status(500).json({ error: (error as Error).message || 'Internal server error' });
