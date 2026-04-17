@@ -19,38 +19,76 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'fieldImageBase64 and fieldImageMimeType are required' });
     }
 
-    const prompt = `You are an Advanced Precision Farming AI. Your task is to analyze a wide-field view of a farm/crop area.
+    const prompt = `You are an Advanced AI Field Analyzer with Smart Zoning capability.
+Your goal: Divide the field into zones and give optimized treatment plan for each zone.
 
 FIELD IMAGE ANALYSIS & PRECISION FARMING:
-- Generate a 3x3 Minimap grid representing the farm. Use 🟩 for healthy zones and 🟥 for infected/damaged zones based on visual field patterns in the image.
-- Decide if "Spot Treatment" is possible (e.g., only spraying 🟥 zones to save cost) vs "Full Field" treatment.
-- Estimate % of chemical/money saved.
+Analyze the provided field image and follow these detailed steps:
 
-FINAL OUTPUT FORMAT (STRICT)
-Generate a comprehensive JSON report containing EXACTLY these fields:
+STEP 1: FIELD SEGMENTATION
+Divide the field into 3-5 logical zones (A, B, C...).
+Identify Condition: Healthy, Mild Infection, Severe Infection.
 
-CRITICAL LANGUAGE RULE: 
-You MUST entirely translate ALL string VALUES inside this JSON into the language code "${language}". This is fully mandatory!
-DO NOT use English for values if the requested language is not English. ONLY the exact JSON keys must remain in English.
+STEP 2: ZONE-WISE ANALYSIS
+For each zone, identify Infection level and Possible issue (Disease, Water stress, Nutrient issue).
+
+STEP 3: ZONE MAP (MINIMAP)
+Create a 3x3 grid using emojis: 🟩 Healthy, 🟨 Mild issue, 🟥 Severe.
+
+STEP 4: PRIORITY SYSTEM
+Assign Priority: High → Severe zones, Medium → Mild zones, Low → Healthy zones.
+
+STEP 5: ZONE-WISE ACTION PLAN
+Provide a specific action for each zone (e.g., Monitoring, Mild treatment, Strong treatment).
+
+STEP 6: TREATMENT OPTIMIZATION
+Decide on Spot treatment OR full field treatment. Estimate % field needing treatment.
+
+STEP 7: RESOURCE SAVING INSIGHT
+Estimate Chemical saving %, Water saving %, and Cost saving in Rupees (₹).
+
+STEP 8: FINAL REPORT SUMMARY
+Determine Overall field condition (Good/Moderate/Poor) and Total affected %.
+
+STEP 9: FINANCIAL DATA (MANDATORY)
+Estimate the "expected_profit_per_sqft" in Rupees (₹) based on the current field condition, crop type, and regional market data for India/South Asia.
+
+STRICT JSON OUTPUT FORMAT:
+You MUST entirely translate ALL string VALUES inside this JSON into the language code "${language}". ONLY the exact JSON keys must remain in English.
 
 {
-  "total_affected_percent": "e.g., 30%",
-  "infection_pattern": "e.g., Localized in the North-East",
-  "risk_level": "e.g., Medium Spread Risk",
-  "minimap": {
-    "grid": [["🟩", "🟩", "🟥"], ["🟩", "🟩", "🟩"], ["🟩", "🟩", "🟩"]],
-    "location_desc": "Infection localized to top right corner"
+  "crop": "[Crop Name] 🌱",
+  "field_health": {
+    "overall_condition": "Overall Condition (Good/Moderate/Poor)",
+    "total_affected_percent": "Affected %"
   },
-  "spot_treatment": {
-    "is_spot_treatment": true,
-    "cost_saved_percent": "35%",
-    "money_saved_per_acre": "$40",
-    "instruction": "Only spray the upper right sector...",
-    "reason": "Because infection has not spread to left or bottom..."
+  "minimap": {
+    "grid": [["🟩", "🟨", "🟥"], ["🟩", "🟩", "🟨"], ["🟩", "🟩", "🟩"]],
+    "location_desc": "Directional description of infection"
+  },
+  "zone_analysis": [
+    { "id": "A", "condition": "Condition Name", "issue": "Detected Issue", "action": "Step-by-step Action" },
+    ...
+  ],
+  "priority_plan": {
+    "high": "Zone IDs",
+    "medium": "Zone IDs",
+    "low": "Zone IDs"
+  },
+  "treatment_strategy": {
+    "type": "Spot / Full field",
+    "area_to_treat_percent": "35%",
+    "short_instruction": "One-line final instruction"
+  },
+  "savings_insight": {
+    "chemical_saved_percent": "35%",
+    "water_saved_percent": "20%",
+    "cost_saved_rupees": "₹XXXX",
+    "expected_profit_per_sqft": "₹XX.XX"
   }
 }
 
-Keep language simple and farmer-friendly in the target language. Be highly detailed. Return ONLY valid JSON.`;
+Return ONLY valid JSON.`;
 
     const response = await fetch(API_URL, {
       method: 'POST',

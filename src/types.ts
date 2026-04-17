@@ -27,20 +27,39 @@ export interface HealthMetrics {
   disease_impact: number;
 }
 
+export interface ZoneAnalysis {
+  id: string;
+  condition: string;
+  issue: string;
+  action: string;
+}
+
 export interface FieldReport {
-  total_affected_percent: string;
-  infection_pattern: string;
-  risk_level: string;
+  crop: string;
+  field_health: {
+    overall_condition: string;
+    total_affected_percent: string;
+  };
   minimap: {
     grid: string[][];
     location_desc: string;
   };
-  spot_treatment: {
-    is_spot_treatment: boolean;
-    cost_saved_percent: string;
-    money_saved_per_acre: string;
-    instruction: string;
-    reason: string;
+  zone_analysis: ZoneAnalysis[];
+  priority_plan: {
+    high: string;
+    medium: string;
+    low: string;
+  };
+  treatment_strategy: {
+    type: string;
+    area_to_treat_percent: string;
+    short_instruction: string;
+  };
+  savings_insight: {
+    chemical_saved_percent: string;
+    water_saved_percent: string;
+    cost_saved_rupees: string;
+    expected_profit_per_sqft: string;
   };
 }
 

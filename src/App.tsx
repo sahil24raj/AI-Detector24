@@ -749,70 +749,155 @@ export default function App() {
 
             {/* FIELD ANALYSIS RESULTS */}
             {step === 'results' && fieldReport && (
-              <div className="card" style={{ marginBottom: '1rem', border: '2px solid #3b82f6', background: 'linear-gradient(to bottom, #1e293b, rgba(15, 23, 42, 0.95))' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                  <div style={{ background: '#3b82f6', color: '#fff', padding: '0.25rem 0.5rem', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 'bold' }}>PRECISION AI</div>
-                  <div className="card-title" style={{ margin: 0 }}>🗺️ Field Analyzer & Minimap</div>
+              <div className="results-wrapper">
+                <div className="card" style={{ marginBottom: '1rem', border: '2px solid #3b82f6', background: 'linear-gradient(to bottom, #1e293b, rgba(15, 23, 42, 0.95))' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                      <div style={{ background: '#3b82f6', color: '#fff', padding: '0.35rem 0.75rem', borderRadius: '8px', fontSize: '0.85rem', fontWeight: '900' }}>ADVANCED AI</div>
+                      <div className="card-title" style={{ margin: 0 }}>🗺️ Field Health Dashboard</div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '0.9rem', color: 'var(--text-dim)' }}>Crop Analyzed</div>
+                      <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#3b82f6' }}>{fieldReport.crop}</div>
+                    </div>
+                  </div>
+
+                  <div className="insight-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+                    <div className="insight-box info" style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', textAlign: 'center' }}>
+                      <div className="insight-box-label" style={{ color: '#60a5fa' }}>Overall Condition</div>
+                      <div style={{ fontSize: '1.4rem', fontWeight: 'bold', color: fieldReport.field_health.overall_condition.toLowerCase().includes('good') ? '#22c55e' : fieldReport.field_health.overall_condition.toLowerCase().includes('poor') ? '#ef4444' : '#f59e0b', marginTop: '0.5rem' }}>
+                        {fieldReport.field_health.overall_condition}
+                      </div>
+                    </div>
+                    <div className="insight-box info" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', textAlign: 'center' }}>
+                      <div className="insight-box-label" style={{ color: '#f87171' }}>Total Affected</div>
+                      <div style={{ fontSize: '1.6rem', fontWeight: 'bold', color: '#f87171', marginTop: '0.5rem' }}>
+                        {fieldReport.field_health.total_affected_percent}
+                      </div>
+                    </div>
+                    <div className="insight-box info" style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)', textAlign: 'center' }}>
+                      <div className="insight-box-label" style={{ color: '#4ade80' }}>Expected Profit / SqFt</div>
+                      <div style={{ fontSize: '1.6rem', fontWeight: 'bold', color: '#4ade80', marginTop: '0.5rem' }}>
+                        {fieldReport.savings_insight.expected_profit_per_sqft}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem' }}>
+                    {/* Minimap Section */}
+                    <div style={{ flex: '1 1 250px' }}>
+                      <div className="card-subtitle" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>📍 Field Zoning Map</div>
+                      <div style={{ background: '#0f172a', padding: '1.5rem', borderRadius: '16px', border: '1px solid #334155', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.3)' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
+                          {fieldReport.minimap.grid.map((row, r) => (
+                            <div key={r} style={{ display: 'flex', gap: '8px' }}>
+                              {row.map((cell, c) => {
+                                const isDanger = cell.includes('🟥');
+                                const isWarning = cell.includes('🟨');
+                                return (
+                                  <div key={c} style={{ 
+                                    width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                                    fontSize: '1.5rem', 
+                                    background: isDanger ? 'rgba(239, 68, 68, 0.15)' : isWarning ? 'rgba(245, 158, 11, 0.15)' : 'rgba(34, 197, 94, 0.15)', 
+                                    borderRadius: '8px', 
+                                    border: `2px solid ${isDanger ? '#ef4444' : isWarning ? '#f59e0b' : '#22c55e'}`,
+                                    transition: 'all 0.2s ease'
+                                  }}>
+                                    {cell}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ))}
+                        </div>
+                        <div style={{ marginTop: '1rem', fontSize: '0.85rem', color: 'var(--text-dim)', textAlign: 'center', lineHeight: '1.4' }}>
+                           {fieldReport.minimap.location_desc}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action Strategy Section */}
+                    <div style={{ flex: '2 1 400px' }}>
+                      <div className="card-subtitle" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>🎯 Treatment Strategy</div>
+                      <div style={{ 
+                        background: fieldReport.treatment_strategy.type.toLowerCase().includes('spot') ? 'rgba(34, 197, 94, 0.05)' : 'rgba(239, 68, 68, 0.05)', 
+                        border: `1px solid ${fieldReport.treatment_strategy.type.toLowerCase().includes('spot') ? '#22c55e' : '#ef4444'}`, 
+                        borderRadius: '16px', padding: '1.25rem' 
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                          <div>
+                             <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: fieldReport.treatment_strategy.type.toLowerCase().includes('spot') ? '#4ade80' : '#f87171' }}>
+                               {fieldReport.treatment_strategy.type}
+                             </div>
+                             <div style={{ fontSize: '0.9rem', color: 'var(--text-dim)' }}>Recommendation</div>
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                             <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--text-bright)' }}>{fieldReport.treatment_strategy.area_to_treat_percent}</div>
+                             <div style={{ fontSize: '0.9rem', color: 'var(--text-dim)' }}>Area to Treat</div>
+                          </div>
+                        </div>
+                        <div style={{ fontSize: '1rem', color: 'var(--text-bright)', background: 'rgba(0,0,0,0.2)', padding: '0.75rem', borderRadius: '8px', borderLeft: '4px solid #3b82f6' }}>
+                          <strong>Next Action:</strong> {fieldReport.treatment_strategy.short_instruction}
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginTop: '1rem' }}>
+                         <div style={{ background: '#1e293b', padding: '0.75rem', borderRadius: '12px', textAlign: 'center', border: '1px solid #334155' }}>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>Chem Saved</div>
+                            <div style={{ color: '#4ade80', fontWeight: 'bold' }}>{fieldReport.savings_insight.chemical_saved_percent}</div>
+                         </div>
+                         <div style={{ background: '#1e293b', padding: '0.75rem', borderRadius: '12px', textAlign: 'center', border: '1px solid #334155' }}>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>Water Saved</div>
+                            <div style={{ color: '#60a5fa', fontWeight: 'bold' }}>{fieldReport.savings_insight.water_saved_percent}</div>
+                         </div>
+                         <div style={{ background: '#1e293b', padding: '0.75rem', borderRadius: '12px', textAlign: 'center', border: '1px solid #334155' }}>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>Cost Saved</div>
+                            <div style={{ color: '#fbbf24', fontWeight: 'bold' }}>{fieldReport.savings_insight.cost_saved_rupees}</div>
+                         </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="card-desc">Visual mapping of infection based on your wide-field shot to calculate cost-saving Spot Treatments.</div>
-                
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', marginTop: '1.5rem' }}>
-                  {/* Grid */}
-                  <div style={{ flex: '0 0 auto' }}>
-                    <div style={{ background: '#0f172a', padding: '1rem', borderRadius: '12px', border: '1px solid #334155' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        {fieldReport.minimap?.grid?.map((row, r) => (
-                          <div key={r} style={{ display: 'flex', gap: '4px' }}>
-                            {row.map((cell, c) => (
-                              <div key={c} style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', background: cell.includes('🟥') ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)', borderRadius: '4px', border: `1px solid ${cell.includes('🟥') ? '#ef4444' : '#22c55e'}` }}>
-                                {cell}
-                              </div>
-                            ))}
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+                   {/* Zone Analysis Table */}
+                   <div className="card">
+                     <div className="card-title" style={{ fontSize: '1.1rem' }}>📍 Zone Breakdown</div>
+                     <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        {fieldReport.zone_analysis.map((zone, i) => (
+                          <div key={i} style={{ 
+                            display: 'flex', gap: '0.75rem', padding: '0.75rem', background: '#0f172a', borderRadius: '12px', border: '1px solid #334155',
+                            borderLeft: `4px solid ${zone.condition.toLowerCase().includes('healthy') ? '#22c55e' : zone.condition.toLowerCase().includes('severe') ? '#ef4444' : '#f59e0b'}`
+                          }}>
+                             <div style={{ fontWeight: 'bold', minWidth: '2rem' }}>{zone.id}</div>
+                             <div style={{ flex: 1 }}>
+                               <div style={{ fontWeight: 'bold', fontSize: '0.9rem', color: 'var(--text-bright)' }}>{zone.condition}</div>
+                               <div style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>{zone.issue}</div>
+                               <div style={{ fontSize: '0.85rem', color: '#94a3b8', marginTop: '0.4rem', fontStyle: 'italic' }}>→ {zone.action}</div>
+                             </div>
                           </div>
                         ))}
-                      </div>
-                      <div style={{ marginTop: '0.75rem', fontSize: '0.85rem', color: 'var(--text-dim)', textAlign: 'center', maxWidth: '140px' }}>
-                        {fieldReport.minimap?.location_desc}
-                      </div>
-                    </div>
-                  </div>
+                     </div>
+                   </div>
 
-                  {/* Spot Treatment Info */}
-                  <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                       <div className="insight-box info" style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', flex: 1 }}>
-                         <div className="insight-box-label" style={{ color: '#60a5fa' }}>Pattern Detection</div>
-                         <div className="insight-box-text" style={{ marginTop: '0.5rem' }}>{fieldReport.infection_pattern}</div>
-                       </div>
-                       <div className="insight-box info" style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', flex: 1 }}>
-                         <div className="insight-box-label" style={{ color: '#34d399' }}>Total Affected</div>
-                         <div className="insight-box-text" style={{ marginTop: '0.5rem', fontSize: '1.25rem', fontWeight: 'bold' }}>{fieldReport.total_affected_percent}</div>
-                       </div>
-                    </div>
-
-                    {fieldReport.spot_treatment?.is_spot_treatment ? (
-                      <div style={{ background: 'rgba(34, 197, 94, 0.1)', border: '1px solid #4ade80', borderRadius: '12px', padding: '1rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#4ade80', fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '0.5rem' }}>
-                          🎯 Spot Treatment Recommended
-                        </div>
-                        <div style={{ color: '#bbf7d0', marginBottom: '0.5rem' }}>{fieldReport.spot_treatment.instruction}</div>
-                        <div style={{ color: 'var(--text-dim)', fontSize: '0.9rem', marginBottom: '1rem' }}>{fieldReport.spot_treatment.reason}</div>
-                        
-                        <div style={{ display: 'flex', gap: '1rem' }}>
-                          <span style={{ background: '#22c55e', color: '#000', padding: '4px 8px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.9rem' }}>Savings: {fieldReport.spot_treatment.cost_saved_percent}</span>
-                          <span style={{ background: '#064e3b', color: '#34d399', padding: '4px 8px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.9rem' }}>{fieldReport.spot_treatment.money_saved_per_acre} Saved/Acre</span>
-                        </div>
+                   {/* Priority System */}
+                   <div className="card">
+                      <div className="card-title" style={{ fontSize: '1.1rem' }}>⚡ Treatment Priority Plan</div>
+                      <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                         <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '0.75rem', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f87171', fontWeight: 'bold', marginBottom: '0.25rem' }}>🔴 High Priority</div>
+                            <div style={{ color: '#fecaca', fontSize: '0.9rem' }}>{fieldReport.priority_plan.high}</div>
+                         </div>
+                         <div style={{ background: 'rgba(245, 158, 11, 0.1)', padding: '0.75rem', borderRadius: '12px', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f59e0b', fontWeight: 'bold', marginBottom: '0.25rem' }}>🟠 Medium Priority</div>
+                            <div style={{ color: '#ffedd5', fontSize: '0.9rem' }}>{fieldReport.priority_plan.medium}</div>
+                         </div>
+                         <div style={{ background: 'rgba(34, 197, 94, 0.1)', padding: '0.75rem', borderRadius: '12px', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#4ade80', fontWeight: 'bold', marginBottom: '0.25rem' }}>🟢 Low Priority</div>
+                            <div style={{ color: '#dcfce7', fontSize: '0.9rem' }}>{fieldReport.priority_plan.low}</div>
+                         </div>
                       </div>
-                    ) : (
-                       <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #f87171', borderRadius: '12px', padding: '1rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f87171', fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '0.5rem' }}>
-                          ⚠️ Full Field Treatment Required
-                        </div>
-                        <div style={{ color: '#fecaca' }}>{fieldReport.spot_treatment?.instruction || 'No spot treatment available for this spread pattern.'}</div>
-                        <div style={{ color: 'var(--text-dim)', fontSize: '0.9rem', marginTop: '0.5rem' }}>{fieldReport.spot_treatment?.reason}</div>
-                      </div>
-                    )}
-                  </div>
+                   </div>
                 </div>
 
                 <div className="btn-group" style={{ justifyContent: 'center', marginTop: '1.5rem' }}>
