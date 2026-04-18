@@ -5,12 +5,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
-    return res.status(500).json({ error: 'GEMINI_API_KEY not configured' });
+    return res.status(500).json({ error: 'GROQ_API_KEY not configured' });
   }
 
-  const MODELS = ['gemini-2.0-flash', 'gemini-2.0-flash-lite'];
+  // Groq vision-capable models (in priority order)
+  const MODELS = [
+    'meta-llama/llama-4-scout-17b-16e-instruct',
+    'meta-llama/llama-4-maverick-17b-128e-instruct',
+  ];
 
   try {
     const { imageBase64, mimeType, location, language = 'en' } = req.body;
@@ -45,50 +49,58 @@ DO NOT use English for values if the requested language is not English. ONLY the
 If unsure, give best possible estimation instead of refusing. Respond only with JSON.`;
 
     const requestBody = {
-      contents: [{
-        parts: [
-          { text: prompt },
-          { inline_data: { mime_type: mimeType, data: imageBase64 } }
-        ]
-      }],
-      generationConfig: {
-        response_mime_type: 'application/json',
-        temperature: 0.3,
-      }
+      model: MODELS[0],
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
+            {
+              type: 'image_url',
+              image_url: {
+                url: `data:${mimeType};base64,${imageBase64}`,
+              },
+            },
+          ],
+        },
+      ],
+      temperature: 0.3,
+      max_tokens: 1024,
+      response_format: { type: 'json_object' },
     };
 
-    let response;
-    let currentModel = MODELS[0];
-
-    // Try primary model
-    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODELS[0]}:generateContent?key=${apiKey}`, {
+    let response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
       body: JSON.stringify(requestBody),
     });
 
-    // Fallback if rate limited or quota exceeded
-    if (!response.ok && (response.status === 429 || response.status === 403)) {
-      currentModel = MODELS[1];
-      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODELS[1]}:generateContent?key=${apiKey}`, {
+    // Fallback to secondary model on rate limit or server error
+    if (!response.ok && (response.status === 429 || response.status >= 500)) {
+      response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({ ...requestBody, model: MODELS[1] }),
       });
     }
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      return res.status(response.status).json({ 
-        error: err?.error?.message || `Gemini API error (${response.status})`,
-        model: currentModel
+      return res.status(response.status).json({
+        error: (err as any)?.error?.message || `Groq API error (${response.status})`,
       });
     }
 
-    const data = await response.json();
-    const rawContent = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-    
-    // Clean up markdown code blocks and extract JSON
+    const data = await response.json() as any;
+    const rawContent = data.choices?.[0]?.message?.content || '{}';
+
+    // Clean up markdown code blocks if present
     let cleanContent = rawContent.trim();
     if (cleanContent.includes('```json')) {
       cleanContent = cleanContent.split('```json')[1].split('```')[0].trim();
@@ -96,19 +108,17 @@ If unsure, give best possible estimation instead of refusing. Respond only with 
       cleanContent = cleanContent.split('```')[1].split('```')[0].trim();
     }
 
-    // Server-side delay as requested
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    // Server-side delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
 
     try {
       const result = JSON.parse(cleanContent);
       return res.status(200).json(result);
-    } catch (parseError) {
-      console.error('JSON Parse Error:', parseError, 'Content:', cleanContent);
-      // Fallback: If cleaning failed but raw content might be valid JSON
+    } catch {
       try {
         const fallbackResult = JSON.parse(rawContent.replace(/```json/g, '').replace(/```/g, '').trim());
         return res.status(200).json(fallbackResult);
-      } catch (e) {
+      } catch {
         return res.status(500).json({ error: 'Failed to parse AI response' });
       }
     }
