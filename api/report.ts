@@ -10,7 +10,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: 'GEMINI_API_KEY not configured' });
   }
 
-  const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+  const MODELS = ['gemini-2.0-flash', 'gemini-1.5-flash'];
 
   try {
     const { 
@@ -104,33 +104,45 @@ DO NOT use English for values if the requested language is not English. ONLY the
 
 Keep language simple but scientifically accurate. Return ONLY valid JSON.`;
 
-    const response = await fetch(API_URL, {
+    const requestBody = {
+      contents: [{
+        parts: [
+          { text: prompt },
+          { inline_data: { mime_type: mimeType, data: imageBase64 } }
+        ]
+      }],
+      generationConfig: {
+        response_mime_type: 'application/json',
+        temperature: 0.3,
+      }
+    };
+
+    let response;
+    let currentModel = MODELS[0];
+
+    // Try primary model
+    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODELS[0]}:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              { text: prompt },
-              {
-                inline_data: {
-                  mime_type: mimeType,
-                  data: imageBase64,
-                },
-              },
-            ],
-          },
-        ],
-        generationConfig: {
-          response_mime_type: 'application/json',
-          temperature: 0.3,
-        },
-      }),
+      body: JSON.stringify(requestBody),
     });
+
+    // Fallback if rate limited or quota exceeded
+    if (!response.ok && (response.status === 429 || response.status === 403)) {
+      currentModel = MODELS[1];
+      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODELS[1]}:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+      });
+    }
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      return res.status(response.status).json({ error: err?.error?.message || 'Gemini API error' });
+      return res.status(response.status).json({ 
+        error: err?.error?.message || `Gemini API error (${response.status})`,
+        model: currentModel
+      });
     }
 
     const data = await response.json();

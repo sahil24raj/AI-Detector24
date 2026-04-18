@@ -337,11 +337,12 @@ export default function App() {
                     {!imagePreview ? (
                       <div
                         className={`dropzone ${isDragging ? 'active' : ''}`}
-                        onClick={() => fileRef.current?.click()}
-                        onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
+                        onClick={() => !loading && fileRef.current?.click()}
+                        onDragOver={e => { e.preventDefault(); if(!loading) setIsDragging(true); }}
                         onDragLeave={() => setIsDragging(false)}
                         onDrop={onDrop}
                         id="dropzone"
+                        style={{ pointerEvents: loading ? 'none' : 'auto', opacity: loading ? 0.6 : 1 }}
                       >
                         <div className="dropzone-icon">📸</div>
                         <div className="dropzone-text">{t('dropzone_title')}</div>
@@ -354,7 +355,7 @@ export default function App() {
                           <img className="img-preview" src={imagePreview} alt="Crop preview" />
                           <div className="img-overlay">
                             <span className="img-badge">✅ {t('image_ready')}</span>
-                            <button className="btn btn-danger" style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', borderRadius: '8px' }} onClick={() => { setImagePreview(''); setImageFile(null); setImageBase64(''); }}>✕ {t('remove')}</button>
+                            <button className="btn btn-danger" style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', borderRadius: '8px' }} onClick={() => { setImagePreview(''); setImageFile(null); setImageBase64(''); }} disabled={loading}>✕ {t('remove')}</button>
                           </div>
                         </div>
                         <div style={{ textAlign: 'center', marginTop: '0.5rem', fontSize: '0.78rem', color: 'var(--text-dim)' }}>
@@ -462,42 +463,42 @@ export default function App() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                       <div className="form-group">
                         <label className="form-label">🌾 Crop Type</label>
-                        <input className="form-input" value={editedCrop.crop_type} onChange={e => setEditedCrop(p => ({ ...p!, crop_type: e.target.value }))} placeholder="e.g., Wheat, Rice, Tomato" id="edit-crop_type" />
+                        <input className="form-input" value={editedCrop.crop_type} onChange={e => setEditedCrop(p => ({ ...p!, crop_type: e.target.value }))} placeholder="e.g., Wheat, Rice, Tomato" id="edit-crop_type" disabled={loading} />
                       </div>
                       <div className="form-group">
                         <label className="form-label">🪸 Soil Type</label>
-                        <input className="form-input" value={editedCrop.soil_type} onChange={e => setEditedCrop(p => ({ ...p!, soil_type: e.target.value }))} placeholder="e.g., Loamy, Sandy, Clay" id="edit-soil_type" />
+                        <input className="form-input" value={editedCrop.soil_type} onChange={e => setEditedCrop(p => ({ ...p!, soil_type: e.target.value }))} placeholder="e.g., Loamy, Sandy, Clay" id="edit-soil_type" disabled={loading} />
                       </div>
                       <div className="form-group">
                         <label className="form-label">🌡️ Temperature Range</label>
-                        <input className="form-input" value={editedCrop.temperature} onChange={e => setEditedCrop(p => ({ ...p!, temperature: e.target.value }))} placeholder="e.g., 25–30°C" id="edit-temperature" />
+                        <input className="form-input" value={editedCrop.temperature} onChange={e => setEditedCrop(p => ({ ...p!, temperature: e.target.value }))} placeholder="e.g., 25–30°C" id="edit-temperature" disabled={loading} />
                       </div>
                       <div className="form-group">
                         <label className="form-label">🦠 Disease or Pest</label>
-                        <input className="form-input" value={editedCrop.disease || ''} onChange={e => setEditedCrop(p => ({ ...p!, disease: e.target.value }))} placeholder="e.g., None, Leaf Miner" />
+                        <input className="form-input" value={editedCrop.disease || ''} onChange={e => setEditedCrop(p => ({ ...p!, disease: e.target.value }))} placeholder="e.g., None, Leaf Miner" disabled={loading} />
                       </div>
                       <div className="form-group">
                         <label className="form-label">📉 Affected Area</label>
-                        <input className="form-input" value={editedCrop.affected_area || ''} onChange={e => setEditedCrop(p => ({ ...p!, affected_area: e.target.value }))} placeholder="e.g., 30%" />
+                        <input className="form-input" value={editedCrop.affected_area || ''} onChange={e => setEditedCrop(p => ({ ...p!, affected_area: e.target.value }))} placeholder="e.g., 30%" disabled={loading} />
                       </div>
                     </div>
                   ) : null}
 
-                  <div className="btn-group">
-                    <button className="btn btn-primary" onClick={doStep3Report} id="confirm-btn">
-                      ✅ {t('confirm_btn')}
-                    </button>
-                    <button className="btn btn-outline" onClick={() => setEditMode(p => !p)} id="edit-toggle-btn">
-                      {editMode ? `❌ ${t('cancel_edit')}` : `✏️ ${t('edit_details')}`}
-                    </button>
-                    <button className="btn btn-danger" onClick={resetApp}>↩ {t('start_over')}</button>
-                  </div>
-
-                  {loading && (
+                  {loading ? (
                     <div className="loader-wrap" style={{ padding: '2rem' }}>
                       <div className="loader-spinner" />
                       <div className="loader-text">{loadingMsg}</div>
                       <div className="loader-sub">Generating detailed health analysis <span className="pulse-dots"><span /><span /><span /></span></div>
+                    </div>
+                  ) : (
+                    <div className="btn-group">
+                      <button className="btn btn-primary" onClick={doStep3Report} id="confirm-btn">
+                        ✅ {t('confirm_btn')}
+                      </button>
+                      <button className="btn btn-outline" onClick={() => setEditMode(p => !p)} id="edit-toggle-btn">
+                        {editMode ? `❌ ${t('cancel_edit')}` : `✏️ ${t('edit_details')}`}
+                      </button>
+                      <button className="btn btn-danger" onClick={resetApp}>↩ {t('start_over')}</button>
                     </div>
                   )}
                 </div>
@@ -708,10 +709,11 @@ export default function App() {
                   {!fieldImagePreview ? (
                     <div
                       className={`dropzone ${isFieldDragging ? 'active' : ''}`}
-                      onClick={() => fieldFileRef.current?.click()}
-                      onDragOver={e => { e.preventDefault(); setIsFieldDragging(true); }}
+                      onClick={() => !loading && fieldFileRef.current?.click()}
+                      onDragOver={e => { e.preventDefault(); if(!loading) setIsFieldDragging(true); }}
                       onDragLeave={() => setIsFieldDragging(false)}
                       onDrop={onFieldDrop}
+                      style={{ pointerEvents: loading ? 'none' : 'auto', opacity: loading ? 0.6 : 1 }}
                     >
                       <div className="dropzone-icon">🗺️</div>
                       <div className="dropzone-text">Click or Drag to Upload Field Photo</div>
@@ -724,7 +726,7 @@ export default function App() {
                         <img className="img-preview" src={fieldImagePreview} alt="Field preview" />
                         <div className="img-overlay">
                           <span className="img-badge">✅ Field Ready</span>
-                          <button className="btn btn-danger" style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', borderRadius: '8px' }} onClick={() => { setFieldImagePreview(''); setFieldImageFile(null); setFieldImageBase64(''); }}>✕ Remove</button>
+                          <button className="btn btn-danger" style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', borderRadius: '8px' }} onClick={() => { setFieldImagePreview(''); setFieldImageFile(null); setFieldImageBase64(''); }} disabled={loading}>✕ Remove</button>
                         </div>
                       </div>
                       <div style={{ textAlign: 'center', marginTop: '0.5rem', fontSize: '0.78rem', color: 'var(--text-dim)' }}>
@@ -742,7 +744,7 @@ export default function App() {
                   </div>
                 ) : (
                   <div className="btn-group">
-                    <button className="btn btn-primary" onClick={doFieldAnalyze} disabled={!fieldImageBase64} id="analyze-field-btn">
+                    <button className="btn btn-primary" onClick={doFieldAnalyze} disabled={!fieldImageBase64 || loading} id="analyze-field-btn">
                       🗺️ Analyze Field Area
                     </button>
                   </div>
