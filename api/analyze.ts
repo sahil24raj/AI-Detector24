@@ -10,7 +10,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: 'GEMINI_API_KEY not configured' });
   }
 
-  const MODELS = ['gemini-2.0-flash', 'gemini-1.5-flash'];
+  const MODELS = ['gemini-2.0-flash', 'gemini-2.0-flash-lite'];
 
   try {
     const { imageBase64, mimeType, location, language = 'en' } = req.body;
