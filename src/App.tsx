@@ -537,139 +537,295 @@ export default function App() {
                 <div className="card" style={{ marginBottom: '1rem' }}>
                   <div className="card-title">⚠️ Detected Issues & Disease Analysis</div>
                   <div className="card-desc">Based on visual symptoms, location, and weather conditions.</div>
-                  
+
+                  {/* Issues + Early Warning Row */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
                     <div className="insight-box bad">
                       <div className="insight-box-label">🚨 Issues Detected</div>
-                      <ul style={{ margin: '0.5rem 0 0 1.25rem', color: '#fca5a5' }}>
+                      <ul style={{ margin: '0.5rem 0 0 1.25rem', color: '#fca5a5', lineHeight: '1.7' }}>
                         {report.issues_detected.map((issue, i) => <li key={i}>{issue}</li>)}
                       </ul>
                     </div>
 
-                    <div className="insight-box info" style={{ backgroundColor: 'rgba(245, 158, 11, 0.1)' }}>
-                      <div className="insight-box-label" style={{ color: '#fcd34d' }}>🦠 Disease & Pest Status</div>
-                      <div style={{ marginTop: '0.5rem', color: '#fcd34d', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        <div><strong>Name:</strong> {report.disease_pest.name}</div>
-                        <div><strong>Severity:</strong> {report.disease_pest.severity}</div>
-                        <div><strong>Spread Risk:</strong> {report.disease_pest.spread_risk}</div>
-                        <div style={{ marginTop: '0.5rem', borderTop: '1px solid rgba(252, 211, 77, 0.2)', paddingTop: '0.5rem' }}>
-                          <strong>📈 Progress:</strong> {report.progress}
-                        </div>
-                      </div>
-                    </div>
-
                     <div className="insight-box info" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)' }}>
                       <div className="insight-box-label" style={{ color: '#f87171' }}>⚠️ Early Warning & Risk</div>
-                      <div className="insight-box-text" style={{ color: '#fca5a5', marginTop: '0.5rem' }}>
-                        <strong>Risk Level:</strong> {report.risk_meter.level} ({report.risk_meter.probability})<br/>
-                        <span style={{ display: 'block', marginTop: '0.5rem' }}>{report.early_warning}</span>
+                      <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                          <span style={{ background: report.risk_meter.level === 'Critical' ? '#ef4444' : report.risk_meter.level === 'Warning' ? '#f59e0b' : '#22c55e', color: '#fff', padding: '0.2rem 0.6rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                            {report.risk_meter.level}
+                          </span>
+                          <span style={{ color: '#fca5a5', fontWeight: 'bold' }}>{report.risk_meter.probability}</span>
+                        </div>
+                        <div style={{ color: '#fca5a5', fontSize: '0.88rem', lineHeight: '1.6' }}>{report.early_warning}</div>
                       </div>
                     </div>
                   </div>
+
+                  {/* Disease Deep Dive */}
+                  <div style={{ marginTop: '1rem', background: 'rgba(245, 158, 11, 0.06)', border: '1px solid rgba(245, 158, 11, 0.25)', borderRadius: '14px', padding: '1.25rem' }}>
+                    <div style={{ color: '#fcd34d', fontWeight: 'bold', fontSize: '1rem', marginBottom: '1rem' }}>🦠 Disease & Pathogen Deep Dive</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem' }}>
+                      <div style={{ background: '#0f172a', padding: '0.75rem', borderRadius: '10px', border: '1px solid #334155' }}>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Disease Name</div>
+                        <div style={{ color: '#fcd34d', fontWeight: 'bold', marginTop: '0.3rem' }}>{report.disease_pest.name}</div>
+                        {report.disease_pest.scientific_name && <div style={{ color: 'var(--text-dim)', fontSize: '0.78rem', fontStyle: 'italic' }}>{report.disease_pest.scientific_name}</div>}
+                      </div>
+                      <div style={{ background: '#0f172a', padding: '0.75rem', borderRadius: '10px', border: '1px solid #334155' }}>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Pathogen Type</div>
+                        <div style={{ color: '#fb923c', fontWeight: 'bold', marginTop: '0.3rem' }}>{report.disease_pest.pathogen_type || 'Fungal'}</div>
+                      </div>
+                      <div style={{ background: '#0f172a', padding: '0.75rem', borderRadius: '10px', border: '1px solid #334155' }}>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Severity Level</div>
+                        <div style={{ color: report.disease_pest.severity === 'High' ? '#ef4444' : report.disease_pest.severity === 'Medium' ? '#f59e0b' : '#22c55e', fontWeight: 'bold', marginTop: '0.3rem' }}>{report.disease_pest.severity}</div>
+                      </div>
+                      <div style={{ background: '#0f172a', padding: '0.75rem', borderRadius: '10px', border: '1px solid #334155' }}>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Spread Risk</div>
+                        <div style={{ color: report.disease_pest.spread_risk === 'High' ? '#ef4444' : report.disease_pest.spread_risk === 'Medium' ? '#f59e0b' : '#22c55e', fontWeight: 'bold', marginTop: '0.3rem' }}>{report.disease_pest.spread_risk}</div>
+                      </div>
+                    </div>
+                    {report.disease_pest.infection_mechanism && (
+                      <div style={{ marginTop: '0.75rem', padding: '0.75rem', background: '#0f172a', borderRadius: '10px', border: '1px solid #334155', borderLeft: '4px solid #f59e0b' }}>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.4rem' }}>🔬 Infection Mechanism</div>
+                        <div style={{ color: '#fde68a', fontSize: '0.88rem', lineHeight: '1.7' }}>{report.disease_pest.infection_mechanism}</div>
+                      </div>
+                    )}
+                    <div style={{ marginTop: '0.75rem', padding: '0.75rem', background: '#0f172a', borderRadius: '10px', border: '1px solid #334155', borderLeft: '4px solid #a855f7' }}>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.4rem' }}>📈 Disease Progress</div>
+                      <div style={{ color: '#e9d5ff', fontSize: '0.88rem', lineHeight: '1.7' }}>{report.progress}</div>
+                    </div>
+                  </div>
+
+                  {/* Visual Symptoms */}
+                  {report.visual_symptoms && report.visual_symptoms.length > 0 && (
+                    <div style={{ marginTop: '1rem' }}>
+                      <div style={{ color: 'var(--text-dim)', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.5rem' }}>👁️ Visual Symptoms Observed</div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                        {report.visual_symptoms.map((s, i) => (
+                          <span key={i} style={{ background: 'rgba(239,68,68,0.12)', color: '#fca5a5', border: '1px solid rgba(239,68,68,0.3)', padding: '0.3rem 0.75rem', borderRadius: '20px', fontSize: '0.82rem' }}>{s}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
+                {/* Root Cause */}
                 <div className="card" style={{ marginBottom: '1rem' }}>
                   <div className="card-title">🧠 Root Cause Analysis</div>
-                  <div className="card-desc" style={{ color: '#fbbf24', marginTop: '0.5rem', fontWeight: 500 }}>
-                    {report.root_cause}
+                  <div style={{ marginTop: '0.75rem', padding: '1rem', background: 'rgba(251, 191, 36, 0.06)', border: '1px solid rgba(251, 191, 36, 0.2)', borderRadius: '12px', borderLeft: '4px solid #fbbf24' }}>
+                    <div style={{ color: '#fde68a', fontSize: '0.95rem', lineHeight: '1.8', fontWeight: 400 }}>{report.root_cause}</div>
                   </div>
+                  {report.weather_impact && (
+                    <div style={{ marginTop: '0.75rem', padding: '1rem', background: 'rgba(56, 189, 248, 0.06)', border: '1px solid rgba(56, 189, 248, 0.2)', borderRadius: '12px', borderLeft: '4px solid #38bdf8' }}>
+                      <div style={{ fontSize: '0.78rem', color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.4rem' }}>🌦️ Weather Impact on Disease</div>
+                      <div style={{ color: '#bae6fd', fontSize: '0.88rem', lineHeight: '1.7' }}>{report.weather_impact}</div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="card" style={{ marginBottom: '1rem' }}>
                   <div className="card-title">🔬 Detailed Environment Analysis</div>
                   <div className="card-desc">In-depth reasoning behind the scores and recommendations.</div>
-                  <div className="insights-grid">
-                    <div className="insight-box info">
-                      <div className="insight-box-label">🌍 Environment</div>
-                      <div className="insight-box-text">{report.analysis.environment}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1rem' }}>
+                    <div style={{ padding: '1rem', background: 'rgba(59,130,246,0.07)', border: '1px solid rgba(59,130,246,0.25)', borderRadius: '12px', borderLeft: '4px solid #3b82f6' }}>
+                      <div style={{ color: '#60a5fa', fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.92rem' }}>🌍 Environmental Conditions</div>
+                      <div style={{ color: '#bfdbfe', fontSize: '0.9rem', lineHeight: '1.8' }}>{report.analysis.environment}</div>
                     </div>
-                    <div className="insight-box info" style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)' }}>
-                      <div className="insight-box-label">💧 Water</div>
-                      <div className="insight-box-text">{report.analysis.water}</div>
+                    <div style={{ padding: '1rem', background: 'rgba(14,165,233,0.07)', border: '1px solid rgba(14,165,233,0.25)', borderRadius: '12px', borderLeft: '4px solid #0ea5e9' }}>
+                      <div style={{ color: '#38bdf8', fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.92rem' }}>💧 Water Stress Analysis</div>
+                      <div style={{ color: '#bae6fd', fontSize: '0.9rem', lineHeight: '1.8' }}>{report.analysis.water}</div>
                     </div>
-                    <div className="insight-box info" style={{ backgroundColor: 'rgba(139, 92, 246, 0.1)' }}>
-                      <div className="insight-box-label">🌱 Soil</div>
-                      <div className="insight-box-text">{report.analysis.soil}</div>
+                    <div style={{ padding: '1rem', background: 'rgba(139,92,246,0.07)', border: '1px solid rgba(139,92,246,0.25)', borderRadius: '12px', borderLeft: '4px solid #8b5cf6' }}>
+                      <div style={{ color: '#a78bfa', fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.92rem' }}>🌱 Full Soil Condition Profile</div>
+                      <div style={{ color: '#ddd6fe', fontSize: '0.9rem', lineHeight: '1.8' }}>{report.analysis.soil}</div>
                     </div>
                   </div>
                 </div>
 
                 <div className="card" style={{ marginBottom: '1rem' }}>
-                  <div className="card-title">💡 Smart Recommendations</div>
-                  <div className="card-desc">Practical, localized, and actionable advice to improve crop health.</div>
+                  <div className="card-title">💡 Smart Treatment Solutions</div>
+                  <div className="card-desc">Science-backed, localized, and actionable remedies with dosage and timing.</div>
                   
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
-                     <div className="action-plan" style={{ background: 'rgba(34, 197, 94, 0.05)', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
-                       <div className="action-plan-header" style={{ color: '#4ade80' }}>🌿 Organic Solutions</div>
-                       {report.smart_solutions?.organic?.map((rec, i) => (
-                         <div className="action-step" key={i}>
-                            <div className="action-step-num" style={{ background: '#4ade80', color: '#000' }}>✓</div>
-                            <div className="action-step-text" style={{ padding: '0.5rem 0' }}>{rec}</div>
-                         </div>
-                       ))}
-                     </div>
-                     
-                     <div className="action-plan" style={{ background: 'rgba(56, 189, 248, 0.05)', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
-                       <div className="action-plan-header" style={{ color: '#38bdf8' }}>🧪 Chemical Solutions</div>
-                       {report.smart_solutions?.chemical?.map((rec, i) => (
-                         <div className="action-step" key={i}>
-                            <div className="action-step-num" style={{ background: '#38bdf8', color: '#000' }}>⚠</div>
-                            <div className="action-step-text" style={{ padding: '0.5rem 0' }}>{rec}</div>
-                         </div>
-                       ))}
-                     </div>
-                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1rem' }}>
+                    {/* Organic */}
+                    <div style={{ background: 'rgba(34, 197, 94, 0.05)', border: '1px solid rgba(34, 197, 94, 0.2)', borderRadius: '14px', padding: '1rem' }}>
+                      <div style={{ color: '#4ade80', fontWeight: 'bold', fontSize: '0.95rem', marginBottom: '0.75rem' }}>🌿 Organic Remedies (with Dilution & Timing)</div>
+                      {report.smart_solutions?.organic?.map((rec, i) => (
+                        <div key={i} style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start', padding: '0.6rem', background: 'rgba(34,197,94,0.08)', borderRadius: '10px', marginBottom: '0.4rem', border: '1px solid rgba(34,197,94,0.15)' }}>
+                          <div style={{ background: '#4ade80', color: '#000', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 'bold', flexShrink: 0 }}>✓</div>
+                          <div style={{ color: '#bbf7d0', fontSize: '0.88rem', lineHeight: '1.6' }}>{rec}</div>
+                        </div>
+                      ))}
+                    </div>
 
-                  {report.recommendations && report.recommendations.length > 0 && (
-                     <div className="action-plan" style={{ marginTop: '1rem' }}>
-                       <div className="action-plan-header">📝 General Advice</div>
-                       {report.recommendations.map((rec, i) => (
-                         <div className="action-step" key={i}>
-                            <div className="action-step-num">👉</div>
-                            <div className="action-step-text" style={{ padding: '0.5rem 0' }}>{rec}</div>
-                         </div>
-                       ))}
-                     </div>
+                    {/* Chemical */}
+                    <div style={{ background: 'rgba(56, 189, 248, 0.05)', border: '1px solid rgba(56, 189, 248, 0.2)', borderRadius: '14px', padding: '1rem' }}>
+                      <div style={{ color: '#38bdf8', fontWeight: 'bold', fontSize: '0.95rem', marginBottom: '0.75rem' }}>🧪 Chemical Treatment (Product + Dose + Precautions)</div>
+                      {report.smart_solutions?.chemical?.map((rec, i) => (
+                        <div key={i} style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start', padding: '0.6rem', background: 'rgba(56,189,248,0.08)', borderRadius: '10px', marginBottom: '0.4rem', border: '1px solid rgba(56,189,248,0.15)' }}>
+                          <div style={{ background: '#38bdf8', color: '#000', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 'bold', flexShrink: 0 }}>⚗</div>
+                          <div style={{ color: '#bae6fd', fontSize: '0.88rem', lineHeight: '1.6' }}>{rec}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Biological */}
+                    {report.smart_solutions?.biological && report.smart_solutions.biological.length > 0 && (
+                      <div style={{ background: 'rgba(168, 85, 247, 0.05)', border: '1px solid rgba(168, 85, 247, 0.2)', borderRadius: '14px', padding: '1rem' }}>
+                        <div style={{ color: '#c084fc', fontWeight: 'bold', fontSize: '0.95rem', marginBottom: '0.75rem' }}>🧬 Biological Control Agents (Bioagents + Application)</div>
+                        {report.smart_solutions.biological.map((rec, i) => (
+                          <div key={i} style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start', padding: '0.6rem', background: 'rgba(168,85,247,0.08)', borderRadius: '10px', marginBottom: '0.4rem', border: '1px solid rgba(168,85,247,0.15)' }}>
+                            <div style={{ background: '#a855f7', color: '#fff', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 'bold', flexShrink: 0 }}>🦠</div>
+                            <div style={{ color: '#e9d5ff', fontSize: '0.88rem', lineHeight: '1.6' }}>{rec}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* General Recs */}
+                    {report.recommendations && report.recommendations.length > 0 && (
+                      <div style={{ background: 'rgba(251,191,36,0.05)', border: '1px solid rgba(251,191,36,0.2)', borderRadius: '14px', padding: '1rem' }}>
+                        <div style={{ color: '#fbbf24', fontWeight: 'bold', fontSize: '0.95rem', marginBottom: '0.75rem' }}>📝 General Field Recommendations</div>
+                        {report.recommendations.map((rec, i) => (
+                          <div key={i} style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start', padding: '0.6rem', background: 'rgba(251,191,36,0.08)', borderRadius: '10px', marginBottom: '0.4rem', border: '1px solid rgba(251,191,36,0.15)' }}>
+                            <div style={{ color: '#fbbf24', flexShrink: 0 }}>👉</div>
+                            <div style={{ color: '#fde68a', fontSize: '0.88rem', lineHeight: '1.6' }}>{rec}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Farm Operations Card */}
+                <div className="card" style={{ marginBottom: '1rem' }}>
+                  <div className="card-title">💰 Farm Operations & Cost Analysis</div>
+                  <div className="card-desc">Estimated financial impacts and required resources per acre.</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
+                    <div style={{ padding: '1rem', background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: '12px' }}>
+                      <div style={{ color: '#fbbf24', fontWeight: 'bold', fontSize: '0.85rem', marginBottom: '0.5rem' }}>⏳ Recovery Time Estimate</div>
+                      <div style={{ color: '#fde68a', fontSize: '1.1rem', fontWeight: 'bold' }}>{report.recovery_time}</div>
+                      <div style={{ color: 'var(--text-dim)', fontSize: '0.78rem', marginTop: '0.25rem' }}>with proper treatment</div>
+                    </div>
+                    <div style={{ padding: '1rem', background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: '12px' }}>
+                      <div style={{ color: '#34d399', fontWeight: 'bold', fontSize: '0.85rem', marginBottom: '0.5rem' }}>💵 Cost vs Benefit Analysis</div>
+                      <div style={{ color: '#6ee7b7', fontSize: '0.88rem', lineHeight: '1.7' }}>{report.cost_benefit}</div>
+                    </div>
+                    <div style={{ padding: '1rem', background: 'rgba(56,189,248,0.08)', border: '1px solid rgba(56,189,248,0.25)', borderRadius: '12px' }}>
+                      <div style={{ color: '#38bdf8', fontWeight: 'bold', fontSize: '0.85rem', marginBottom: '0.5rem' }}>🚜 Spray & Fertilizer Plan</div>
+                      <div style={{ color: '#bae6fd', fontSize: '0.88rem', lineHeight: '1.7' }}>{report.spray_plan}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Irrigation Full Detail */}
+                <div className="card" style={{ marginBottom: '1rem' }}>
+                  <div className="card-title">💧 Irrigation Guide (Precision Schedule)</div>
+                  <div className="card-desc">Exact method, quantity, frequency, and critical watering stages.</div>
+                  {typeof report.irrigation_advice === 'string' ? (
+                    <div style={{ marginTop: '0.75rem', padding: '1rem', background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '12px', color: '#93c5fd', lineHeight: '1.8' }}>{report.irrigation_advice}</div>
+                  ) : report.irrigation_advice && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', marginTop: '0.75rem' }}>
+                      {[['⚙️ Method', report.irrigation_advice.method, '#60a5fa'], ['💦 Quantity / Acre / Day', report.irrigation_advice.quantity_liters_per_acre_per_day, '#38bdf8'], ['🔁 Frequency', report.irrigation_advice.frequency, '#818cf8'], ['🌾 Critical Growth Stages', report.irrigation_advice.critical_stages, '#34d399'], ['🚫 What to Avoid', report.irrigation_advice.avoid, '#f87171']].map(([label, val, color]) => val && (
+                        <div key={String(label)} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', padding: '0.7rem 1rem', background: '#0f172a', borderRadius: '10px', border: '1px solid #334155', borderLeft: `4px solid ${color}` }}>
+                          <div style={{ color: String(color), fontWeight: 'bold', fontSize: '0.85rem', minWidth: '180px', flexShrink: 0 }}>{label}</div>
+                          <div style={{ color: '#e2e8f0', fontSize: '0.88rem', lineHeight: '1.6' }}>{val}</div>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
 
-                <div className="card" style={{ marginBottom: '1rem' }}>
-                  <div className="card-title">💰 Farm Operations & Cost Analysis</div>
-                  <div className="card-desc">Estimated financial impacts and action requirements per acre.</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
-                    <div className="insight-box info" style={{ backgroundColor: 'rgba(251, 191, 36, 0.1)' }}>
-                      <div className="insight-box-label" style={{ color: '#fbbf24' }}>⏳ Recovery Time Prediction</div>
-                      <div className="insight-box-text" style={{ color: '#fde68a', marginTop: '0.5rem' }}>{report.recovery_time}</div>
-                    </div>
-                    <div className="insight-box info" style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}>
-                      <div className="insight-box-label" style={{ color: '#34d399' }}>💵 Cost vs Benefit</div>
-                      <div className="insight-box-text" style={{ color: '#6ee7b7', marginTop: '0.5rem' }}>{report.cost_benefit}</div>
-                    </div>
-                    <div className="insight-box info" style={{ backgroundColor: 'rgba(56, 189, 248, 0.1)' }}>
-                      <div className="insight-box-label" style={{ color: '#38bdf8' }}>🚜 Spray & Fertilizer Calculator</div>
-                      <div className="insight-box-text" style={{ color: '#bae6fd', marginTop: '0.5rem' }}>{report.spray_plan}</div>
+                {/* Soil Amendments & Companion Plants */}
+                {(report.soil_amendments?.length || report.companion_plants?.length) && (
+                  <div className="card" style={{ marginBottom: '1rem' }}>
+                    <div className="card-title">🌍 Soil Health & Companion Planting</div>
+                    {report.soil_amendments && report.soil_amendments.length > 0 && (
+                      <div style={{ marginTop: '0.75rem' }}>
+                        <div style={{ color: '#a78bfa', fontWeight: 'bold', fontSize: '0.88rem', marginBottom: '0.5rem' }}>🪨 Soil Amendments (Quantity per Acre)</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                          {report.soil_amendments.map((s, i) => (
+                            <div key={i} style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start', padding: '0.5rem 0.75rem', background: 'rgba(139,92,246,0.08)', borderRadius: '8px', border: '1px solid rgba(139,92,246,0.2)' }}>
+                              <div style={{ color: '#8b5cf6', flexShrink: 0 }}>◆</div>
+                              <div style={{ color: '#ddd6fe', fontSize: '0.88rem' }}>{s}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {report.companion_plants && report.companion_plants.length > 0 && (
+                      <div style={{ marginTop: '1rem' }}>
+                        <div style={{ color: '#4ade80', fontWeight: 'bold', fontSize: '0.88rem', marginBottom: '0.5rem' }}>🌱 Companion Plants (Pest Repellent / Soil Enriching)</div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                          {report.companion_plants.map((p, i) => (
+                            <span key={i} style={{ background: 'rgba(34,197,94,0.1)', color: '#86efac', border: '1px solid rgba(34,197,94,0.25)', padding: '0.35rem 0.85rem', borderRadius: '20px', fontSize: '0.82rem' }}>{p}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Harvest Readiness & Post Harvest */}
+                {(report.harvest_readiness || (report.post_harvest_care && report.post_harvest_care.length > 0)) && (
+                  <div className="card" style={{ marginBottom: '1rem' }}>
+                    <div className="card-title">🌾 Harvest & Post-Harvest Guide</div>
+                    {report.harvest_readiness && (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', marginTop: '0.75rem' }}>
+                        {[['📅 Days to Harvest (Current)', report.harvest_readiness.days_to_harvest_current, '#f59e0b'], ['✅ Days to Harvest (Optimal)', report.harvest_readiness.days_to_harvest_optimal, '#22c55e'], ['📉 Quality Impact', report.harvest_readiness.quality_impact, '#f87171']].map(([label, val, color]) => val && (
+                          <div key={String(label)} style={{ background: '#0f172a', padding: '0.75rem', borderRadius: '10px', border: '1px solid #334155', borderLeft: `4px solid ${color}` }}>
+                            <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', marginBottom: '0.3rem' }}>{label}</div>
+                            <div style={{ color: String(color), fontWeight: 'bold', fontSize: '0.95rem' }}>{val}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {report.post_harvest_care && report.post_harvest_care.length > 0 && (
+                      <div style={{ marginTop: '1rem' }}>
+                        <div style={{ color: '#fbbf24', fontWeight: 'bold', fontSize: '0.85rem', marginBottom: '0.4rem' }}>📦 Post-Harvest Storage & Care Tips</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                          {report.post_harvest_care.map((tip, i) => (
+                            <div key={i} style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start', padding: '0.5rem 0.75rem', background: 'rgba(251,191,36,0.07)', borderRadius: '8px', border: '1px solid rgba(251,191,36,0.2)' }}>
+                              <div style={{ color: '#fbbf24', flexShrink: 0 }}>📌</div>
+                              <div style={{ color: '#fde68a', fontSize: '0.88rem' }}>{tip}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Similar Case Study */}
+                {report.similar_case && (
+                  <div className="card" style={{ marginBottom: '1rem', border: '1px solid rgba(16,185,129,0.3)', background: 'rgba(16,185,129,0.03)' }}>
+                    <div className="card-title">📚 Real Case Study from India/South Asia</div>
+                    <div style={{ marginTop: '0.75rem', padding: '1rem', background: '#0f172a', borderRadius: '12px', border: '1px solid #334155', borderLeft: '4px solid #34d399' }}>
+                      <div style={{ fontSize: '0.72rem', color: '#34d399', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.5rem' }}>📋 Documented Case</div>
+                      <div style={{ color: '#a7f3d0', fontSize: '0.9rem', lineHeight: '1.8' }}>{report.similar_case}</div>
                     </div>
                   </div>
-                </div>
+                )}
 
-                <div className="card" style={{ marginBottom: '1rem' }}>
-                  <div className="card-title">🌐 External Insights</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
-                    <div className="insight-box info" style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)' }}>
-                      <div className="insight-box-label" style={{ color: '#60a5fa' }}>⏰ Irrigation Timing</div>
-                      <div className="insight-box-text" style={{ color: '#93c5fd', marginTop: '0.5rem' }}>
-                        {typeof report.irrigation_advice === 'string'
-                          ? report.irrigation_advice
-                          : `${report.irrigation_advice?.method || ''} | ${report.irrigation_advice?.quantity_liters_per_acre_per_day || ''} | ${report.irrigation_advice?.frequency || ''}`
-                        }
+                {/* Risk Propagation */}
+                {report.risk_propagation && (
+                  <div className="card" style={{ marginBottom: '1rem', border: '1px solid rgba(239,68,68,0.25)', background: 'rgba(239,68,68,0.03)' }}>
+                    <div className="card-title">☣️ Disease Spread & Risk Propagation</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', marginTop: '0.75rem' }}>
+                      <div style={{ background: '#0f172a', padding: '0.75rem', borderRadius: '10px', border: '1px solid #334155' }}>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Spreads to Neighbors?</div>
+                        <div style={{ color: report.risk_propagation.spread_to_neighbors === 'Yes' ? '#ef4444' : '#22c55e', fontWeight: 'bold', fontSize: '1rem', marginTop: '0.3rem' }}>{report.risk_propagation.spread_to_neighbors}</div>
+                      </div>
+                      <div style={{ background: '#0f172a', padding: '0.75rem', borderRadius: '10px', border: '1px solid #334155' }}>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Spread Speed</div>
+                        <div style={{ color: report.risk_propagation.spread_speed === 'Fast' ? '#ef4444' : report.risk_propagation.spread_speed === 'Moderate' ? '#f59e0b' : '#22c55e', fontWeight: 'bold', fontSize: '1rem', marginTop: '0.3rem' }}>{report.risk_propagation.spread_speed}</div>
+                      </div>
+                      <div style={{ background: '#0f172a', padding: '0.75rem', borderRadius: '10px', border: '1px solid #334155' }}>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Spread Mechanism</div>
+                        <div style={{ color: '#fca5a5', fontWeight: '600', fontSize: '0.9rem', marginTop: '0.3rem' }}>{report.risk_propagation.spread_mechanism}</div>
                       </div>
                     </div>
-                    <div className="insight-box info" style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}>
-                      <div className="insight-box-label" style={{ color: '#34d399' }}>📊 Similar Case Insight</div>
-                      <div className="insight-box-text" style={{ color: '#6ee7b7', marginTop: '0.5rem' }}>{report.similar_case}</div>
-                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="card" style={{ marginBottom: '1rem' }}>
                   <div className="card-title">🗓️ Severity Action Plan</div>

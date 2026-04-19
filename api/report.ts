@@ -208,7 +208,7 @@ ONLY keep JSON keys in English. Return ONLY valid JSON. No markdown. No extra te
         },
       ],
       temperature: 0.2,
-      max_tokens: 4096,
+      max_tokens: 8000,
       response_format: { type: 'json_object' },
     };
 
